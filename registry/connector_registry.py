@@ -28,6 +28,14 @@ CONNECTOR_CATALOG: dict[str, dict] = {
         "plans": ["free", "starter", "professional", "enterprise"],
         "icon": "🏢",
     },
+    "zoho_books": {
+        "name": "Zoho Books",
+        "category": "Accounting & Finance",
+        "status": "available",
+        "description": "Zoho Books — invoices, bills, customers, vendors, organizations. Shared OAuth with Zoho CRM.",
+        "plans": ["free", "starter", "professional", "enterprise"],
+        "icon": "📚",
+    },
     "hubspot": {
         "name": "HubSpot",
         "category": "CRM",
@@ -60,14 +68,6 @@ CONNECTOR_CATALOG: dict[str, dict] = {
         "description": "Tally ERP 9 / Tally Prime — Indian accounting, GST, invoices.",
         "plans": ["starter", "professional", "enterprise"],
         "icon": "📒",
-    },
-    "zoho_books": {
-        "name": "Zoho Books",
-        "category": "Accounting & Finance",
-        "status": "planned",
-        "description": "Zoho Books — invoicing, expenses, GST compliance.",
-        "plans": ["starter", "professional", "enterprise"],
-        "icon": "📚",
     },
     # Lead Generation
     "apollo": {

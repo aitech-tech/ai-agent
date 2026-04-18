@@ -35,11 +35,13 @@ ZOHO_CLIENT_SECRET = os.getenv("ZOHO_CLIENT_SECRET", "")
 ZOHO_REDIRECT_URI = os.getenv("ZOHO_REDIRECT_URI", "http://localhost:8000/callback")
 ZOHO_SCOPES = (
     "ZohoCRM.modules.ALL,"
-    "ZohoCRM.users.READ"
+    "ZohoCRM.users.READ,"
+    "ZohoBooks.fullaccess.ALL"
 )
 ZOHO_AUTH_URL = "https://accounts.zoho.com/oauth/v2/auth"
 ZOHO_TOKEN_URL = "https://accounts.zoho.com/oauth/v2/token"
 ZOHO_API_BASE = "https://www.zohoapis.com/crm/v2"
+ZOHO_BOOKS_API_BASE = "https://www.zohoapis.com/books/v3"
 
 
 def load_connector_config(connector_name: str) -> dict:

@@ -38,10 +38,10 @@ ZOHO_SCOPES = (
     "ZohoCRM.users.READ,"
     "ZohoBooks.fullaccess.ALL"
 )
-ZOHO_AUTH_URL = "https://accounts.zoho.com/oauth/v2/auth"
-ZOHO_TOKEN_URL = "https://accounts.zoho.com/oauth/v2/token"
-ZOHO_API_BASE = "https://www.zohoapis.com/crm/v2"
-ZOHO_BOOKS_API_BASE = "https://www.zohoapis.com/books/v3"
+ZOHO_AUTH_URL = "https://accounts.zoho.in/oauth/v2/auth"
+ZOHO_TOKEN_URL = "https://accounts.zoho.in/oauth/v2/token"
+ZOHO_API_BASE = "https://www.zohoapis.in/crm/v2"
+ZOHO_BOOKS_API_BASE = "https://www.zohoapis.in/books/v3"
 
 
 def load_connector_config(connector_name: str) -> dict:

@@ -169,7 +169,7 @@ Edit `config/connectors.json` and fill in your Zoho app credentials:
 
 #### How to create a Zoho API app
 
-1. Go to [https://api-console.zoho.com](https://api-console.zoho.com)
+1. Go to [https://api-console.zoho.in](https://api-console.zoho.in)
 2. Click **Add Client** → choose **Server-based Applications**
 3. Fill in:
    - **Client Name**: ReckLabs AI Agent (or any name)

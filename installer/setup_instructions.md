@@ -36,7 +36,7 @@ Edit `config\connectors.json`:
 ```
 
 #### How to get Zoho credentials
-1. Go to https://api-console.zoho.com/
+1. Go to https://api-console.zoho.in/
 2. Create a **Server-based Application**
 3. Set **Redirect URI** to `http://localhost:8766/callback`
 4. Copy the **Client ID** and **Client Secret** into `connectors.json`

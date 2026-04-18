@@ -3,7 +3,7 @@ setlocal enabledelayedexpansion
 
 echo ============================================================
 echo   ReckLabs AI Agent  v1.0.0  -  Windows Installer
-echo   Your ROI Partner  |  recklabs.com
+echo   Your ROI Partner  ^|  recklabs.com
 echo ============================================================
 echo.
 
@@ -57,7 +57,7 @@ echo Python found: %PY_VER% at %PYTHON_EXE%
 echo.
 echo Installing Python dependencies...
 "%PYTHON_EXE%" -m pip install --upgrade pip --quiet
-"%PYTHON_EXE%" -m pip install -r "%AGENT_DIR%\requirements.txt" --quiet
+"%PYTHON_EXE%" -m pip install -r "%AGENT_DIR%\requirements.txt"
 if errorlevel 1 (
     echo ERROR: Failed to install dependencies.
     pause

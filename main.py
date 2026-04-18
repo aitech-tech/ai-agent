@@ -10,12 +10,18 @@ Architecture:
 Configure Claude Desktop to launch this via the MCP config.
 See installer/install.bat for one-click setup.
 """
+import io
 import logging
 import sys
 from pathlib import Path
 
 # Ensure the project root is on sys.path so all imports resolve
 sys.path.insert(0, str(Path(__file__).parent))
+
+# Force UTF-8 on stdin/stdout — Windows defaults to cp1252 which cannot
+# encode Unicode characters like ₹, breaking MCP JSON-RPC parsing.
+sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
+sys.stdin = io.TextIOWrapper(sys.stdin.buffer, encoding="utf-8", errors="replace")
 
 from config.settings import ensure_storage
 from agent.mcp_server import MCPServer

@@ -1,0 +1,14 @@
+requests>=2.31.0
+cryptography>=41.0.0
+
+# Open-source MCP connectors (curated from GitHub per Phase 1 spec)
+# Active connectors — installed now:
+zoho-crm-mcp>=0.1.1          # github.com/asklokesh/zoho-crm-mcp-server
+
+# Coming-soon connectors — uncomment as each goes live:
+# hubspot-mcp-server>=0.2.1  # github.com/peakmojo/mcp-hubspot
+# workspace-mcp>=1.10.0      # github.com/taylorwilsdon/google_workspace_mcp  (Gmail + Drive)
+# slack-mcp-server>=0.2.1    # github.com/korotovsky/slack-mcp-server
+# mcp-notion>=0.0.2          # github.com/TauroN3/notion-mcp-server-python
+# universal-mcp-apollo>=0.1.0 # github.com/Chainscore/apollo-io-mcp
+# salesforce-mcp-server-h>=0.1.0  # github.com/LokiMCPUniverse/salesforce-mcp-server

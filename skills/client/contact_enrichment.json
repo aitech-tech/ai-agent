@@ -1,0 +1,9 @@
+{
+  "_comment": "Client customisation layer for contact_enrichment skill. Edit this file to override defaults.",
+  "params_override": {
+    "fetch_contacts": {
+      "limit": 50
+    }
+  },
+  "context": {}
+}

@@ -1,0 +1,15 @@
+{
+  "name": "lead_generation",
+  "description": "Fetch recent leads from Zoho CRM and return a summary",
+  "version": "1.0",
+  "steps": [
+    {
+      "step_name": "fetch_leads",
+      "tool": "get_zoho_leads",
+      "params": {
+        "limit": 20,
+        "page": 1
+      }
+    }
+  ]
+}

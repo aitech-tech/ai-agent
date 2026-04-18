@@ -1,0 +1,60 @@
+{
+  "_comment": "Pinned stable versions for all connectors. Includes upstream open-source package info per Phase 1 spec.",
+  "zoho": {
+    "connector_version": "1.0.0",
+    "api_version": "v2",
+    "status": "stable",
+    "upstream_package": "zoho-crm-mcp==0.1.1",
+    "upstream_repo": "github.com/asklokesh/zoho-crm-mcp-server",
+    "last_tested": "2026-04-18"
+  },
+  "hubspot": {
+    "connector_version": "0.0.0",
+    "api_version": "v3",
+    "status": "coming_soon",
+    "upstream_package": "hubspot-mcp-server>=0.2.1",
+    "upstream_repo": "github.com/peakmojo/mcp-hubspot"
+  },
+  "salesforce": {
+    "connector_version": "0.0.0",
+    "api_version": "v58",
+    "status": "coming_soon",
+    "upstream_package": "salesforce-mcp-server-h>=0.1.0",
+    "upstream_repo": "github.com/LokiMCPUniverse/salesforce-mcp-server"
+  },
+  "gmail": {
+    "connector_version": "0.0.0",
+    "api_version": "v1",
+    "status": "coming_soon",
+    "upstream_package": "workspace-mcp>=1.10.0",
+    "upstream_repo": "github.com/taylorwilsdon/google_workspace_mcp"
+  },
+  "google_drive": {
+    "connector_version": "0.0.0",
+    "api_version": "v3",
+    "status": "coming_soon",
+    "upstream_package": "workspace-mcp>=1.10.0",
+    "upstream_repo": "github.com/taylorwilsdon/google_workspace_mcp"
+  },
+  "slack": {
+    "connector_version": "0.0.0",
+    "api_version": "v2",
+    "status": "coming_soon",
+    "upstream_package": "slack-mcp-server>=0.2.1",
+    "upstream_repo": "github.com/korotovsky/slack-mcp-server"
+  },
+  "notion": {
+    "connector_version": "0.0.0",
+    "api_version": "v1",
+    "status": "coming_soon",
+    "upstream_package": "notion-mcp-server-python>=0.1.0",
+    "upstream_repo": "github.com/TauroN3/notion-mcp-server-python"
+  },
+  "apollo": {
+    "connector_version": "0.0.0",
+    "api_version": "v1",
+    "status": "coming_soon",
+    "upstream_package": "universal-mcp-apollo>=0.1.0",
+    "upstream_repo": "github.com/Chainscore/apollo-io-mcp"
+  }
+}

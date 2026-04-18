@@ -1,0 +1,19 @@
+{
+  "name": "lead_generation",
+  "description": "Fetch recent leads from Zoho CRM and return a structured summary with key business insights",
+  "version": "1.0",
+  "connector": "zoho",
+  "llm_provider": "claude",
+  "supports": ["text"],
+  "steps": [
+    {
+      "step_name": "fetch_leads",
+      "tool": "get_zoho_leads",
+      "params": {
+        "limit": 20,
+        "page": 1
+      },
+      "on_error": "stop"
+    }
+  ]
+}

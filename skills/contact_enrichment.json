@@ -1,0 +1,15 @@
+{
+  "name": "contact_enrichment",
+  "description": "Fetch contacts from Zoho CRM for enrichment and qualification",
+  "version": "1.0",
+  "steps": [
+    {
+      "step_name": "fetch_contacts",
+      "tool": "get_zoho_contacts",
+      "params": {
+        "limit": 50,
+        "fields": ["First_Name", "Last_Name", "Email", "Phone", "Company", "Lead_Source"]
+      }
+    }
+  ]
+}

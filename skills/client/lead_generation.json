@@ -1,0 +1,9 @@
+{
+  "_comment": "Client customisation layer for lead_generation skill. Edit this file to override defaults.",
+  "params_override": {
+    "fetch_leads": {
+      "limit": 20
+    }
+  },
+  "context": {}
+}

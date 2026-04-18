@@ -1,0 +1,5 @@
+{
+  "_comment": "Client customisation layer for pipeline_review skill. Edit this file to override defaults.",
+  "params_override": {},
+  "context": {}
+}

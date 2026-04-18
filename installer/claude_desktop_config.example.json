@@ -1,0 +1,13 @@
+{
+  "_comment": "Copy this file to %APPDATA%\\Claude\\claude_desktop_config.json — update the path to match your installation.",
+  "mcpServers": {
+    "recklabs-ai-agent": {
+      "command": "python",
+      "args": ["C:\\ReckLabs\\ai-agent\\main.py"],
+      "env": {
+        "ZOHO_CLIENT_ID": "",
+        "ZOHO_CLIENT_SECRET": ""
+      }
+    }
+  }
+}

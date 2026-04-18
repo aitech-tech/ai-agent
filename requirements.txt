@@ -1,5 +1,6 @@
 requests>=2.31.0
 cryptography>=41.0.0
+flask>=3.0.0
 
 # Open-source MCP connectors (curated from GitHub per Phase 1 spec)
 # Active connectors — installed now:

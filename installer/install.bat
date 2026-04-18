@@ -63,7 +63,7 @@ if errorlevel 1 (
     pause
     exit /b 1
 )
-echo Dependencies installed (requests, cryptography).
+echo Dependencies installed (requests, cryptography, flask, zoho-crm-mcp).
 
 :: ---- Ensure storage and skill directories exist ----
 if not exist "%AGENT_DIR%\storage" mkdir "%AGENT_DIR%\storage"

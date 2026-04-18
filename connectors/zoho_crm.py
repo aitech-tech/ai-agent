@@ -27,8 +27,8 @@ class ZohoCRMClient:
             self._request(self._url("users"), {"type": "CurrentUser"})
             logger.info("CRM available: True")
             return True
-        except Exception:
-            logger.info("CRM available: False")
+        except Exception as exc:
+            logger.warning("CRM available: False — reason: %s", exc)
             return False
 
     def get_leads(self, limit: int = 20, page: int = 1, fields: list = None) -> list:

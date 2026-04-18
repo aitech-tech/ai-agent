@@ -40,10 +40,12 @@ class ZohoBooksClient:
             orgs = data.get("organizations", [])
             if orgs:
                 self._org_id = str(orgs[0].get("organization_id", ""))
-            logger.info("Books available: True (org_id: %s)", self._org_id)
+                logger.info("Books available: True (org_id: %s)", self._org_id)
+            else:
+                logger.warning("Books available: True but no organizations returned — Books may not be subscribed")
             return True
-        except Exception:
-            logger.info("Books available: False")
+        except Exception as exc:
+            logger.warning("Books available: False — reason: %s", exc)
             return False
 
     def get_organizations(self) -> list:

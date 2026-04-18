@@ -149,15 +149,26 @@ class ZohoConnector(BaseConnector):
         resp = requests.get(url, headers=headers, params=params or {}, timeout=15)
 
         if resp.status_code == 401:
-            logger.info("Token expired — refreshing")
-            new_token = self._zoho_auth.refresh_access_token()
+            logger.info("Token expired — refreshing via zoho.in endpoint")
+            # Use our own refresh (auth/zoho_oauth.py) — zoho_mcp's refresh uses .com which breaks India accounts
+            from auth.zoho_oauth import refresh_access_token as _refresh_fn
             tokens = load_tokens("zoho")
-            tokens["access_token"] = new_token
+            new_tokens = _refresh_fn(
+                tokens.get("refresh_token", ""),
+                self.config["client_id"],
+                self.config["client_secret"],
+            )
+            tokens["access_token"] = new_tokens["access_token"]
             save_tokens("zoho", tokens)
+            # Sync new token into ZohoAuth env var so get_auth_headers() returns fresh token
+            os.environ["ZOHO_ACCESS_TOKEN"] = tokens["access_token"]
+            self._zoho_auth.access_token = tokens["access_token"]
             headers = self._zoho_auth.get_auth_headers()
             resp = requests.get(url, headers=headers, params=params or {}, timeout=15)
 
         if not resp.ok:
+            logger.warning("Zoho API error — URL: %s | Status: %s | Body: %s",
+                           url, resp.status_code, resp.text[:500])
             raise ConnectorError("zoho", f"API {resp.status_code}: {resp.text[:200]}", resp.status_code)
 
         return resp.json()

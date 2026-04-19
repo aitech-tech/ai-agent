@@ -1,0 +1,15 @@
+{
+  "_comment": "Tracks the version of each installed base skill file. Updated by apply_skill_updates tool.",
+  "lead_generation": {
+    "version": "2.0",
+    "installed_at": "2026-04-19"
+  },
+  "contact_enrichment": {
+    "version": "2.0",
+    "installed_at": "2026-04-19"
+  },
+  "pipeline_review": {
+    "version": "2.0",
+    "installed_at": "2026-04-19"
+  }
+}

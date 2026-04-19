@@ -25,6 +25,13 @@ HEALTH_FILE = STORAGE_DIR / "health.json"
 CONNECTORS_CONFIG_FILE = BASE_DIR / "config" / "connectors.json"
 CONNECTOR_VERSIONS_FILE = BASE_DIR / "config" / "connector_versions.json"
 CONNECTOR_CATALOG_FILE = BASE_DIR / "config" / "connector_catalog.json"
+CONNECTOR_CONFIG_FILE = BASE_DIR / "config" / "connector_config.json"
+
+# Skill update manifest URL — hosted on GitHub Releases alongside each new version
+SKILLS_UPDATE_URL = os.getenv(
+    "SKILLS_UPDATE_URL",
+    "https://github.com/aitech-tech/ai-agent/releases/latest/download/skill_manifest.json",
+)
 
 # MCP server identity
 MCP_SERVER_NAME = "recklabs-ai-agent"
@@ -44,6 +51,19 @@ ZOHO_AUTH_URL = "https://accounts.zoho.in/oauth/v2/auth"
 ZOHO_TOKEN_URL = "https://accounts.zoho.in/oauth/v2/token"
 ZOHO_API_BASE = "https://www.zohoapis.in/crm/v2"
 ZOHO_BOOKS_API_BASE = "https://www.zohoapis.in/books/v3"
+
+
+def load_selected_connectors() -> list[str]:
+    """Return the list of connectors the user selected at install time."""
+    if CONNECTOR_CONFIG_FILE.exists():
+        try:
+            data = json.loads(CONNECTOR_CONFIG_FILE.read_text(encoding="utf-8"))
+            selected = data.get("selected_connectors", [])
+            if isinstance(selected, list) and selected:
+                return selected
+        except (json.JSONDecodeError, OSError):
+            pass
+    return ["zoho"]  # safe default
 
 
 def load_connector_config(connector_name: str) -> dict:

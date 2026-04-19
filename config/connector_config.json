@@ -1,0 +1,6 @@
+{
+  "_comment": "Written by the installer based on the user's connector selection on recklabs.com. Edit to enable/disable connectors.",
+  "selected_connectors": ["zoho"],
+  "generated_at": "2026-04-19",
+  "version": "1.0.1"
+}

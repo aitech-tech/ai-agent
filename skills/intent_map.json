@@ -1,0 +1,31 @@
+{
+  "_comment": "Maps natural language query patterns to skill names. Used by run_skill_by_intent tool. Keys are lowercase phrases; values are exact skill names.",
+  "mappings": {
+    "show leads": "lead_generation",
+    "fetch leads": "lead_generation",
+    "get leads": "lead_generation",
+    "list leads": "lead_generation",
+    "lead analysis": "lead_generation",
+    "analyze leads": "lead_generation",
+    "lead generation": "lead_generation",
+    "recent leads": "lead_generation",
+    "new leads": "lead_generation",
+    "show contacts": "contact_enrichment",
+    "fetch contacts": "contact_enrichment",
+    "get contacts": "contact_enrichment",
+    "list contacts": "contact_enrichment",
+    "enrich contacts": "contact_enrichment",
+    "contact enrichment": "contact_enrichment",
+    "contact analysis": "contact_enrichment",
+    "analyze contacts": "contact_enrichment",
+    "pipeline review": "pipeline_review",
+    "analyze pipeline": "pipeline_review",
+    "pipeline analysis": "pipeline_review",
+    "review pipeline": "pipeline_review",
+    "crm overview": "pipeline_review",
+    "sales pipeline": "pipeline_review",
+    "full pipeline": "pipeline_review",
+    "pipeline health": "pipeline_review",
+    "crm summary": "pipeline_review"
+  }
+}

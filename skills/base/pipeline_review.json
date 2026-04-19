@@ -1,13 +1,14 @@
 {
   "name": "pipeline_review",
-  "description": "Full CRM pipeline review: fetch leads, contacts, and accounts in one workflow",
-  "version": "1.0",
+  "description": "Full CRM pipeline fetch: leads, contacts, and accounts with merged totals for Claude to analyse",
+  "version": "2.0",
   "connector": "zoho",
   "llm_provider": "claude",
   "supports": ["text"],
   "steps": [
     {
       "step_name": "fetch_leads",
+      "type": "tool",
       "tool": "get_zoho_leads",
       "params": {
         "limit": 20,
@@ -17,6 +18,7 @@
     },
     {
       "step_name": "fetch_contacts",
+      "type": "tool",
       "tool": "get_zoho_contacts",
       "params": {
         "limit": 20,
@@ -26,9 +28,21 @@
     },
     {
       "step_name": "fetch_accounts",
+      "type": "tool",
       "tool": "get_zoho_accounts",
       "params": {
         "limit": 20
+      },
+      "on_error": "continue"
+    },
+    {
+      "step_name": "summarize_pipeline",
+      "type": "transform",
+      "operation": "merge",
+      "input_steps": {
+        "leads": "fetch_leads",
+        "contacts": "fetch_contacts",
+        "accounts": "fetch_accounts"
       },
       "on_error": "continue"
     }

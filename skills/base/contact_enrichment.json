@@ -1,13 +1,14 @@
 {
   "name": "contact_enrichment",
-  "description": "Fetch contacts from Zoho CRM with full field details for enrichment and analysis",
-  "version": "1.0",
+  "description": "Fetch contacts from Zoho CRM and return structured data with enrichment stats for Claude to analyse",
+  "version": "2.0",
   "connector": "zoho",
   "llm_provider": "claude",
   "supports": ["text"],
   "steps": [
     {
       "step_name": "fetch_contacts",
+      "type": "tool",
       "tool": "get_zoho_contacts",
       "params": {
         "limit": 50,
@@ -15,6 +16,15 @@
         "fields": ["First_Name", "Last_Name", "Email", "Phone", "Account_Name", "Lead_Source", "Created_Time"]
       },
       "on_error": "stop"
+    },
+    {
+      "step_name": "summarize_contacts",
+      "type": "transform",
+      "operation": "aggregate",
+      "input_step": "fetch_contacts",
+      "group_by": ["Lead_Source"],
+      "completeness_fields": ["Email", "Phone", "Account_Name"],
+      "on_error": "continue"
     }
   ]
 }

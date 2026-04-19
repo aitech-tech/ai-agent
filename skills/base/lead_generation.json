@@ -1,19 +1,28 @@
 {
   "name": "lead_generation",
-  "description": "Fetch recent leads from Zoho CRM and return a structured summary with key business insights",
-  "version": "1.0",
+  "description": "Fetch recent leads from Zoho CRM and return structured data with aggregated stats for Claude to analyse",
+  "version": "2.0",
   "connector": "zoho",
   "llm_provider": "claude",
   "supports": ["text"],
   "steps": [
     {
       "step_name": "fetch_leads",
+      "type": "tool",
       "tool": "get_zoho_leads",
       "params": {
         "limit": 20,
         "page": 1
       },
       "on_error": "stop"
+    },
+    {
+      "step_name": "summarize_leads",
+      "type": "transform",
+      "operation": "aggregate",
+      "input_step": "fetch_leads",
+      "group_by": ["Lead_Source", "Status", "Lead_Status"],
+      "on_error": "continue"
     }
   ]
 }

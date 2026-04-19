@@ -56,10 +56,15 @@ def _start_callback_server(
         raise RuntimeError("flask package required. Run: pip install flask")
 
     import logging as _log
-    _log.getLogger("werkzeug").setLevel(_log.ERROR)  # suppress Flask request logs from stdout
+    import flask.cli as _flask_cli
+
+    _log.getLogger("werkzeug").setLevel(_log.ERROR)
+    _log.getLogger("werkzeug._internal").setLevel(_log.ERROR)  # suppresses banner lines
+    _flask_cli.show_server_banner = lambda *args, **kwargs: None  # suppresses "* Serving Flask app"
 
     app = Flask(__name__)
     app.logger.setLevel(_log.ERROR)
+    app.logger.disabled = True
 
     @app.route("/callback")
     def callback():

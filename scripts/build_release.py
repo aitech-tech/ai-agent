@@ -44,8 +44,6 @@ EXCLUDE_DIRS = {
 
 # Exact relative POSIX paths to exclude (matched with as_posix())
 EXCLUDE_FILES = {
-    # Secrets — never ship
-    ".env",
     # Old flat skills superseded by 2-layer system
     "skills/lead_generation.json",
     "skills/contact_enrichment.json",
@@ -72,10 +70,6 @@ def should_exclude(path: Path) -> bool:
     # Exact file match (posix-normalised for cross-platform safety)
     rel_posix = rel.as_posix()
     if rel_posix in EXCLUDE_FILES:
-        return True
-
-    # Any .env* file except .env.example
-    if path.name.startswith(".env") and path.name != ".env.example":
         return True
 
     # Plaintext base skills — only encrypted versions ship

@@ -25,6 +25,7 @@ from config.settings import SKILLS_DIR, SKILLS_BASE_DIR, SKILLS_CLIENT_DIR
 logger = logging.getLogger(__name__)
 
 INTENT_MAP_FILE = SKILLS_DIR / "intent_map.json"
+RESERVED_SKILL_FILES = {"intent_map", "skill_versions"}
 
 
 class SkillError(Exception):
@@ -106,7 +107,7 @@ class SkillExecutor:
         if path.exists():
             try:
                 data = json.loads(path.read_text(encoding="utf-8"))
-                if path.stem in ("skill_crypto", "intent_map"):
+                if path.stem in RESERVED_SKILL_FILES:
                     return None
                 return data
             except Exception as e:
@@ -163,7 +164,7 @@ class SkillExecutor:
 
         if SKILLS_DIR.exists():
             for f in SKILLS_DIR.glob("*.json"):
-                if f.stem not in ("skill_crypto", "intent_map"):
+                if f.stem not in RESERVED_SKILL_FILES:
                     names.add(f.stem)
 
         for name in names:

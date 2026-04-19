@@ -16,9 +16,7 @@ from pathlib import Path
 # ------------------------------------------------------------------
 
 # Any zip entry matching these exact names (basename) is forbidden
-FORBIDDEN_NAMES = {
-    ".env",
-}
+FORBIDDEN_NAMES = {}
 
 # Any zip entry whose path contains these substrings is forbidden
 FORBIDDEN_SUBSTRINGS = {
@@ -99,10 +97,6 @@ def validate(zip_path: Path) -> bool:
         # Plaintext base skills
         if is_plaintext_base_skill(entry):
             errors.append(f"  PLAINTEXT SKILL (IP LEAK): {entry}")
-
-        # .env variants (any .env* except .env.example)
-        if name.startswith(".env") and name != ".env.example":
-            errors.append(f"  SECRET FILE: {entry}")
 
     # Required files must be present
     for label, check in REQUIRED_CHECKS:

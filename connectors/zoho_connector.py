@@ -21,7 +21,7 @@ from connectors.base_connector import BaseConnector, ConnectorError, Authenticat
 from connectors.zoho_crm import ZohoCRMClient
 from connectors.zoho_books import ZohoBooksClient
 from auth.zoho_oauth import save_tokens, load_tokens, run_browser_oauth_flow
-from config.settings import load_connector_config
+from config.settings import ZOHO_CLIENT_ID, ZOHO_CLIENT_SECRET, ZOHO_REDIRECT_URI
 
 logger = logging.getLogger(__name__)
 
@@ -50,13 +50,10 @@ class ZohoConnector(BaseConnector):
     upstream = "github.com/asklokesh/zoho-crm-mcp-server"
 
     def __init__(self):
-        cfg = load_connector_config("zoho")
         config = {
-            "client_id": cfg.get("client_id") or os.getenv("ZOHO_CLIENT_ID", ""),
-            "client_secret": cfg.get("client_secret") or os.getenv("ZOHO_CLIENT_SECRET", ""),
-            "redirect_uri": cfg.get("redirect_uri") or os.getenv(
-                "ZOHO_REDIRECT_URI", "http://localhost:8000/callback"
-            ),
+            "client_id": ZOHO_CLIENT_ID,
+            "client_secret": ZOHO_CLIENT_SECRET,
+            "redirect_uri": ZOHO_REDIRECT_URI,
         }
         super().__init__(config)
         self._zoho_auth = None
@@ -69,15 +66,8 @@ class ZohoConnector(BaseConnector):
     # ------------------------------------------------------------------
 
     def authenticate(self) -> dict:
-        client_id = self.config.get("client_id")
-        client_secret = self.config.get("client_secret")
-
-        if not client_id or not client_secret:
-            return {
-                "status": "config_required",
-                "message": "Zoho credentials not configured in config/connectors.json.",
-            }
-
+        client_id = self.config["client_id"]
+        client_secret = self.config["client_secret"]
         tokens = load_tokens("zoho")
 
         try:
@@ -111,12 +101,11 @@ class ZohoConnector(BaseConnector):
     def get_auth_url(self) -> str:
         if self._zoho_auth:
             return self._zoho_auth.generate_auth_url()
-        client_id = self.config.get("client_id", "YOUR_CLIENT_ID")
-        os.environ.setdefault("ZOHO_CLIENT_ID", client_id)
-        os.environ.setdefault("ZOHO_CLIENT_SECRET", "placeholder")
-        os.environ.setdefault("ZOHO_REDIRECT_URI", self.config.get("redirect_uri", "http://localhost:8000/callback"))
-        from zoho_mcp.zoho_auth import ZohoAuth
-        return ZohoAuth().generate_auth_url()
+        tmp = _init_zoho_auth(
+            self.config["client_id"], self.config["client_secret"],
+            self.config["redirect_uri"], {}
+        )
+        return tmp.generate_auth_url()
 
     def exchange_code(self, code: str) -> dict:
         if not self._zoho_auth:

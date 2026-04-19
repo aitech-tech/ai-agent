@@ -3,7 +3,7 @@ build_release.py — ReckLabs Platform release packager.
 
 Creates a clean distribution zip (recklabs-ai-agent-vX.Y.Z.zip) ready for
 GitHub Releases. The zip contains everything a new user needs: all code,
-platform credentials pre-baked into connectors.json, and the installer.
+platform credentials in .env, and the installer.
 
 Usage:
     python scripts/build_release.py

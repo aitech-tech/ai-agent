@@ -1,12 +1,14 @@
 """
 Central configuration for ReckLabs AI Agent Platform — Phase 1.
-All secrets come from environment variables or config files. Never hardcode credentials here.
+All secrets come from the .env file or environment variables. Never hardcode credentials here.
 """
 import os
 import json
 from pathlib import Path
+from dotenv import load_dotenv
 
 BASE_DIR = Path(__file__).parent.parent
+load_dotenv(BASE_DIR / ".env", override=False)
 STORAGE_DIR = BASE_DIR / "storage"
 
 # Skills: 2-layer system (base = encrypted IP, client = user customisation)

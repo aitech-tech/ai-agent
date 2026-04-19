@@ -18,9 +18,9 @@ storage/dashboard_snapshot.html
 skills/base/*.json.enc
 
 # Credentials — never commit real credentials
-# connectors.json is committed but contains only platform OAuth app credentials (safe to ship)
+# .env holds the platform OAuth credentials; .env.example is the safe template (no secrets)
 .env
-*.env
+!.env.example
 
 # Build output
 dist/

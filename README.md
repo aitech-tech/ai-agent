@@ -19,23 +19,26 @@ ReckLabs AI Agent is a local-first MCP server that bridges the free Claude Deskt
    - [Environment Variables](#environment-variables)
 6. [Claude Desktop Integration](#claude-desktop-integration)
 7. [First-Time Authentication](#first-time-authentication)
-8. [Available Tools](#available-tools)
-9. [Skills System](#skills-system)
+8. [Connector Documentation](#connector-documentation)
+9. [Connector Selection](#connector-selection)
+10. [Available Tools](#available-tools)
+11. [Skills System](#skills-system)
    - [Using Skills](#using-skills)
    - [Writing a Custom Skill](#writing-a-custom-skill)
    - [Skill Parameter Templating](#skill-parameter-templating)
-10. [Example Queries for Claude](#example-queries-for-claude)
-11. [Project Structure](#project-structure)
-12. [Developer Guide](#developer-guide)
+12. [Skill Updates](#skill-updates)
+13. [Example Queries for Claude](#example-queries-for-claude)
+14. [Project Structure](#project-structure)
+15. [Developer Guide](#developer-guide)
     - [Adding a New Connector](#adding-a-new-connector)
     - [Adding New Tools](#adding-new-tools)
     - [Connector Registry](#connector-registry)
-13. [Connector Roadmap](#connector-roadmap)
-14. [Packaging as a Standalone Executable](#packaging-as-a-standalone-executable)
-15. [Security Notes](#security-notes)
-16. [Troubleshooting](#troubleshooting)
-17. [Logs](#logs)
-18. [License](#license)
+16. [Connector Roadmap](#connector-roadmap)
+17. [Packaging as a Standalone Executable](#packaging-as-a-standalone-executable)
+18. [Security Notes](#security-notes)
+19. [Troubleshooting](#troubleshooting)
+20. [Logs](#logs)
+21. [License](#license)
 
 ---
 
@@ -104,17 +107,24 @@ ReckLabs AI Agent  ◄──── skills/*.json (workflow definitions)
 
 ### One-Click (Windows)
 
-1. Download and extract the package to a permanent location, e.g. `C:\ReckLabs\ai-agent\`
-2. Double-click `installer\install.bat`
-3. The installer will:
+1. Open the ReckLabs website and select the connectors you want.
+2. Click **Generate Config File**. This downloads `recklabs_config.json`.
+3. Download and extract the package to a permanent location, e.g. `C:\ReckLabs\ai-agent\`.
+4. Place `recklabs_config.json` next to `installer\install.bat`.
+5. Double-click `installer\install.bat`.
+6. The installer will:
    - Verify Python is installed
    - Run `pip install -r requirements.txt`
+   - Read `recklabs_config.json`
+   - Write selected connectors to `config\connector_config.json`
    - Create the `storage/` directory and `tokens.json`
    - Write the MCP configuration to `%APPDATA%\Claude\claude_desktop_config.json`
-4. Add your credentials (see [Configuration](#configuration))
-5. Restart Claude Desktop
+7. Restart Claude Desktop.
+8. Ask Claude: `Get platform status`.
+9. Ask Claude: `Authenticate with Zoho`.
 
 > If Claude Desktop is not yet installed, the installer will show the config block to add manually.
+> If `recklabs_config.json` is missing, the installer defaults to the Zoho connector.
 
 ---
 
@@ -145,59 +155,77 @@ mkdir storage
 echo {} > storage/tokens.json
 ```
 
-**4. Register with Claude Desktop** — see [Claude Desktop Integration](#claude-desktop-integration)
+**4. Select connectors**
 
-**5. Add credentials** — see [Configuration](#configuration)
-
----
-
-## Configuration
-
-### Zoho CRM Credentials
-
-Edit `config/connectors.json` and fill in your Zoho app credentials:
+Create `config\connector_config.json`:
 
 ```json
 {
-  "zoho": {
-    "client_id": "YOUR_ZOHO_CLIENT_ID",
-    "client_secret": "YOUR_ZOHO_CLIENT_SECRET",
-    "redirect_uri": "http://localhost:8766/callback"
-  }
+  "selected_connectors": ["zoho"],
+  "version": "1.0.1"
 }
+```
+
+Only selected connector tools are loaded by `main.py`. In the current release, `zoho` is the available production connector.
+
+**5. Register with Claude Desktop** - see [Claude Desktop Integration](#claude-desktop-integration)
+
+**6. Authenticate through Claude** - see [First-Time Authentication](#first-time-authentication)
+
+---
+## Configuration
+
+### Connector Selection Config
+
+Connector selection is stored in `config\connector_config.json`. The installer normally writes this file from the website-generated `recklabs_config.json`.
+
+Example:
+
+```json
+{
+  "selected_connectors": ["zoho"],
+  "generated_at": "2026-04-19",
+  "version": "1.0.1"
+}
+```
+
+If the file is missing or invalid, the runtime defaults to `zoho`.
+
+### Zoho OAuth Configuration
+
+The current Zoho flow reads OAuth platform credentials from `.env` or environment variables. For local development, create or edit `.env`:
+
+```text
+ZOHO_CLIENT_ID=YOUR_ZOHO_CLIENT_ID
+ZOHO_CLIENT_SECRET=YOUR_ZOHO_CLIENT_SECRET
+ZOHO_REDIRECT_URI=http://localhost:8000/callback
 ```
 
 #### How to create a Zoho API app
 
 1. Go to [https://api-console.zoho.in](https://api-console.zoho.in)
-2. Click **Add Client** → choose **Server-based Applications**
+2. Click **Add Client** and choose **Server-based Applications**
 3. Fill in:
-   - **Client Name**: ReckLabs AI Agent (or any name)
+   - **Client Name**: ReckLabs AI Agent, or any internal name
    - **Homepage URL**: `http://localhost`
-   - **Authorized Redirect URIs**: `http://localhost:8766/callback`
+   - **Authorized Redirect URIs**: `http://localhost:8000/callback`
 4. Click **Create**
-5. Copy the **Client ID** and **Client Secret** into `config/connectors.json`
+5. Copy the **Client ID** and **Client Secret** into `.env`
 
-> The redirect URI **must** match exactly what you put in `connectors.json`. The default `http://localhost:8766/callback` works for local use.
-
----
+> The redirect URI must match exactly. The default local callback URL is `http://localhost:8000/callback`.
 
 ### Environment Variables
 
-As an alternative to `connectors.json`, you can set credentials via environment variables. This is useful in CI, Docker, or when you don't want credentials in files.
-
 | Variable | Description | Default |
 |---|---|---|
-| `ZOHO_CLIENT_ID` | Zoho OAuth client ID | — |
-| `ZOHO_CLIENT_SECRET` | Zoho OAuth client secret | — |
-| `ZOHO_REDIRECT_URI` | OAuth callback URL | `http://localhost:8766/callback` |
-| `MCP_HOST` | MCP server bind host | `localhost` |
-| `MCP_PORT` | MCP server port | `8765` |
+| `ZOHO_CLIENT_ID` | Zoho OAuth client ID | - |
+| `ZOHO_CLIENT_SECRET` | Zoho OAuth client secret | - |
+| `ZOHO_REDIRECT_URI` | OAuth callback URL | `http://localhost:8000/callback` |
+| `SKILLS_UPDATE_URL` | Skill update manifest URL | GitHub Releases `skill_manifest.json` |
 
-Values in `connectors.json` take precedence over environment variables.
+Values in `.env` are loaded automatically. Environment variables can override deployment-specific settings.
 
 ---
-
 ## Claude Desktop Integration
 
 Claude Desktop discovers MCP servers through a JSON config file.
@@ -233,7 +261,7 @@ The first time you ask Claude to use a Zoho tool:
 
 1. The agent will open your **default browser** to the Zoho authorization page
 2. Log in with your Zoho account and click **Accept**
-3. Your browser redirects to `localhost:8766` — the agent captures the code automatically
+3. Your browser redirects to `localhost:8000` — the agent captures the code automatically
 4. Tokens are exchanged and saved to `storage/tokens.json`
 5. All subsequent requests use the saved tokens; refresh happens automatically
 
@@ -243,24 +271,65 @@ Ask Claude: *"Give me the Zoho authentication URL"* — then open the URL manual
 
 ---
 
+## Connector Documentation
+
+Detailed non-technical connector documentation is available in:
+
+- [Zoho CRM and Zoho Books Connector Guide](docs/zoho-crm-books-connector.md)
+
+The guide covers machine requirements, setup instructions, supported actions, example prompts, limitations, dos and don'ts, troubleshooting, and support handoff notes.
+
+---
+
+## Connector Selection
+
+Connector selection is handled before installation:
+
+1. The user selects connectors on the website.
+2. The website downloads a small `recklabs_config.json` file.
+3. The user places `recklabs_config.json` next to `installer\install.bat`.
+4. The installer writes `config\connector_config.json`.
+5. `main.py` reads `config\connector_config.json` and loads tools only for the selected connectors.
+
+Example runtime config:
+
+```json
+{
+  "selected_connectors": ["zoho"],
+  "generated_at": "2026-04-19",
+  "version": "1.0.1"
+}
+```
+
+If no config file exists, the runtime defaults to `["zoho"]`. Currently, Zoho is the only selectable production connector; other connector cards are visible on the website but disabled until their tool modules are ready.
+
+---
+
 ## Available Tools
 
-These tools are registered with Claude Desktop and can be called by name or through natural language:
+These tools are registered with Claude Desktop and can be called by name or through natural language. Connector tools are loaded only when their connector is selected in `config\connector_config.json`.
 
-### Zoho CRM Tools
+### Zoho CRM and Books Tools
 
 | Tool Name | Description | Key Parameters |
 |---|---|---|
-| `zoho_authenticate` | Start OAuth2 flow or check auth status | — |
-| `zoho_get_auth_url` | Return the OAuth authorization URL | — |
-| `zoho_exchange_code` | Exchange OAuth code for tokens | `code` (string) |
-| `get_zoho_leads` | Fetch leads from CRM | `limit` (int), `page` (int), `fields` (list) |
-| `get_zoho_contacts` | Fetch contacts from CRM | `limit` (int), `page` (int), `fields` (list) |
-| `get_zoho_accounts` | Fetch company accounts | `limit` (int) |
-| `search_zoho_leads` | Search leads by criteria | `criteria` (string) |
+| `zoho_authenticate` | Start OAuth2 flow or check auth status | - |
+| `zoho_service_status` | Check whether CRM and Books are available | - |
+| `zoho_get_auth_url` | Return the OAuth authorization URL | - |
+| `zoho_exchange_code` | Exchange OAuth code for tokens | `code` |
+| `get_zoho_leads` | Fetch leads from Zoho CRM | `limit`, `page`, `fields` |
+| `get_zoho_contacts` | Fetch contacts from Zoho CRM | `limit`, `page`, `fields` |
+| `get_zoho_accounts` | Fetch company accounts from Zoho CRM | `limit` |
+| `search_zoho_leads` | Search Zoho CRM leads | `criteria` |
+| `get_zoho_invoices` | Fetch Zoho Books invoices | `limit`, `page`, `status` |
+| `get_zoho_bills` | Fetch Zoho Books bills | `limit`, `page`, `status` |
+| `get_zoho_organizations` | List Zoho Books organizations | - |
+| `get_zoho_customers` | Fetch Zoho Books customers | `limit`, `page` |
+| `get_zoho_vendors` | Fetch Zoho Books vendors | `limit`, `page` |
 
 **Search criteria syntax:**
-```
+
+```text
 Field:operator:value
 
 Examples:
@@ -274,12 +343,22 @@ Examples:
 
 | Tool Name | Description | Key Parameters |
 |---|---|---|
-| `list_skills` | List all available workflow skills | — |
-| `run_skill` | Execute a skill by name | `name` (string), `context` (object) |
-| `reload_skills` | Reload skill files from disk | — |
+| `list_skills` | List all available workflow skills | - |
+| `run_skill` | Execute a skill by name | `name`, `context` |
+| `reload_skills` | Reload skill files from disk | - |
+| `run_skill_by_intent` | Match a natural language phrase to a skill | `query`, `context` |
+
+### Platform Tools
+
+| Tool Name | Description | Key Parameters |
+|---|---|---|
+| `check_license` | Show current license status | - |
+| `activate_license` | Activate a license key | `key` |
+| `get_platform_status` | Show platform, selected connectors, skill versions, and license | - |
+| `check_skill_updates` | Check for newer encrypted base skill files | - |
+| `apply_skill_updates` | Download and apply available base skill updates | - |
 
 ---
-
 ## Skills System
 
 Skills are **declarative JSON workflow files** stored in the `skills/` directory. They let you chain multiple tool calls into a single named operation that Claude can trigger in one request.
@@ -363,6 +442,44 @@ After adding or editing skill files, ask Claude: *"Reload skills"* — no restar
 
 ---
 
+## Skill Updates
+
+The skill file system has four working layers:
+
+| Layer | Location | Purpose |
+|---|---|---|
+| Base skills | `skills/base/*.json.enc` | ReckLabs-maintained encrypted workflows and defaults |
+| Client layer | `skills/client/*.json` | Client-owned readable overrides and custom steps |
+| Encryption | `skills/skill_crypto.py` | Encrypts and decrypts base skills for the local runtime |
+| Updates | `check_skill_updates`, `apply_skill_updates` | Downloads newer encrypted base skills from the release manifest |
+
+Local installed versions are tracked in:
+
+```text
+skills\skill_versions.json
+```
+
+The update manifest is read from `SKILLS_UPDATE_URL`, which defaults to:
+
+```text
+https://github.com/aitech-tech/ai-agent/releases/latest/download/skill_manifest.json
+```
+
+To check for updates, ask Claude:
+
+```text
+Check skill updates.
+```
+
+To apply updates, ask Claude:
+
+```text
+Apply skill updates.
+```
+
+Only the encrypted base layer is replaced. Client files in `skills/client/` are not touched.
+
+---
 ## Example Queries for Claude
 
 These are natural language prompts you can type in Claude Desktop after installation:
@@ -649,11 +766,11 @@ Update `claude_desktop_config.json` to use the executable path:
 
 3. **Tokens are stored unencrypted** in Phase 1. For production, encrypt this file using the OS keychain (Windows Credential Manager, macOS Keychain) or a secrets manager.
 
-4. **The agent runs only on localhost** — it does not open any network ports and communicates with Claude Desktop exclusively through stdin/stdout. There is no external attack surface.
+4. **The agent runs locally** - MCP communication uses stdin/stdout with Claude Desktop. During Zoho authentication, a temporary localhost callback server listens on port `8000` to receive the OAuth redirect.
 
-5. **OAuth scopes are minimal** — the Zoho connector requests only read-only scopes: `ZohoCRM.modules.leads.READ` and `ZohoCRM.modules.contacts.READ`. Expand scopes in `config/settings.py` only if write operations are needed.
+5. **OAuth scopes are purpose-scoped** — the current Zoho connector requests CRM module access, Zoho users read access, and Zoho Books access so it can detect CRM/Books availability and fetch supported records. Keep scopes as narrow as possible when adding write operations.
 
-6. **Never share your `connectors.json`** or `tokens.json` with anyone, including support staff.
+6. **Never share your `.env`, `connectors.json`, `connector_config.json`, or `tokens.json`** with anyone, including support staff.
 
 ---
 
@@ -668,10 +785,10 @@ Update `claude_desktop_config.json` to use the executable path:
 
 ### "Authentication required" error when fetching data
 
-- Confirm `client_id` and `client_secret` are filled in `config/connectors.json`
-- Verify the `redirect_uri` in `connectors.json` matches **exactly** what is set in the Zoho API Console
+- Confirm `.env` contains valid `ZOHO_CLIENT_ID` and `ZOHO_CLIENT_SECRET` for local development
+- Verify `ZOHO_REDIRECT_URI` matches exactly what is set in the Zoho API Console
 - Delete `storage/tokens.json` contents (replace with `{}`) and re-authenticate
-- Check that port `8766` is not blocked by a firewall or already in use
+- Check that port `8000` is not blocked by a firewall or already in use
 
 ### "Import error" or module not found on startup
 

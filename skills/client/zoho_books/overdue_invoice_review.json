@@ -1,0 +1,30 @@
+{
+  "name": "overdue_invoice_review",
+  "display_name": "Overdue Invoice Review",
+  "description": "Fetch all overdue invoices and group by status",
+  "version": "1.0",
+  "format": "simple",
+  "source_doc": "overdue_invoice_review.docx",
+  "steps": [
+    {
+      "step_name": "fetch_data",
+      "tool": "zoho_books_list_invoices",
+      "params": {
+        "status": "overdue",
+        "limit": 30
+      },
+      "on_error": "stop"
+    },
+    {
+      "step_name": "summarise",
+      "tool": "summarise_results",
+      "params": {
+        "group_by": "status",
+        "source_step": "fetch_data"
+      },
+      "on_error": "continue"
+    }
+  ],
+  "business_rules": "Flag invoices above 50000",
+  "notes": "Indian GST applies"
+}

@@ -1,0 +1,18 @@
+{
+  "name": "advanced_invoice_skill",
+  "display_name": "Advanced Invoice Skill",
+  "description": "Fetch unpaid invoices",
+  "version": "1.0",
+  "format": "advanced",
+  "source_doc": "adv_executor_test.docx",
+  "steps": [
+    {
+      "step_name": "fetch",
+      "tool": "zoho_books_list_invoices",
+      "params": {
+        "status": "unpaid"
+      },
+      "on_error": "stop"
+    }
+  ]
+}

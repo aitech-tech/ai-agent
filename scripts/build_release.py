@@ -3,13 +3,13 @@ build_release.py — ReckLabs Platform release packager.
 
 Build pipeline (in order):
   1. Encrypt all skills/base/*.json  ->  skills/base/*.json.enc
-  2. Package zip — includes .json.enc, excludes .env and plaintext .json base skills
+  2. Package zip — includes .json.enc, excludes plaintext .json base skills
   3. Validate zip — fails hard if any sensitive file is found inside
   4. Report final zip path and size
 
 Usage:
     python scripts/build_release.py
-    python scripts/build_release.py --version 1.0.1
+    python scripts/build_release.py --version 1.2.0
 """
 import subprocess
 import sys
@@ -35,7 +35,7 @@ EXCLUDE_DIRS = {
     ".venv",
     "dist",
     "build",
-    "storage",
+    "storage",   # runtime files — installer creates the dir; contents never ship
     "scripts",   # internal build tools — not for distribution
     ".vscode",
     ".idea",
@@ -48,15 +48,19 @@ EXCLUDE_FILES = {
     "skills/lead_generation.json",
     "skills/contact_enrichment.json",
     "skills/intent_map.json",   # re-generated from base skills
-    # Runtime data
-    "storage/tokens.json",
-    "storage/agent.log",
-    "storage/health.json",
-    "storage/dashboard_snapshot.html",
+    # Docs / internal files not for end users
+    "README.md",
+    "AI Recklabs with security included.pdf",
+    "recklabs-agent-session-context.pdf",
 }
 
 # Extensions to exclude
 EXCLUDE_EXTENSIONS = {".pyc", ".pyo", ".pyd"}
+
+# Forbidden suffix patterns (any file matching any of these is excluded)
+EXCLUDE_SUFFIX_PATTERNS = (
+    ".pdf",   # no internal PDFs in release
+)
 
 
 def should_exclude(path: Path) -> bool:
@@ -72,8 +76,17 @@ def should_exclude(path: Path) -> bool:
     if rel_posix in EXCLUDE_FILES:
         return True
 
+    # All PDFs excluded
+    if path.suffix.lower() == ".pdf":
+        return True
+
     # Plaintext base skills — only encrypted versions ship
     if (len(parts) >= 3 and parts[0] == "skills" and parts[1] == "base"
+            and path.suffix == ".json"):
+        return True
+
+    # Generated client skill JSON files — private, not for distribution
+    if (len(parts) >= 4 and parts[0] == "skills" and parts[1] == "client"
             and path.suffix == ".json"):
         return True
 
@@ -135,11 +148,14 @@ def build_zip(version: str) -> Path:
             included.append(arcname)
             file_count += 1
 
-        # Ensure empty storage/ dir exists — installer writes into it at runtime
-        try:
-            zf.mkdir(f"{inner}/storage")
-        except AttributeError:
-            pass  # Python < 3.11 — storage dir will be created by installer
+        # Include runtime directories even when they are empty in a fresh checkout.
+        for dirname in ("storage", "logs", "tokens"):
+            try:
+                zf.mkdir(f"{inner}/{dirname}/")
+            except AttributeError:
+                pass  # Python < 3.11 cannot add explicit empty dirs.
+            except ValueError:
+                pass  # Directory already represented by included files.
 
     size_kb = zip_path.stat().st_size // 1024
     print(f"  Files packaged: {file_count}")
@@ -172,7 +188,7 @@ def validate_zip(zip_path: Path) -> None:
 
 def main():
     parser = argparse.ArgumentParser(description="ReckLabs release packager")
-    parser.add_argument("--version", default="1.0.1", help="Version number (default: 1.0.1)")
+    parser.add_argument("--version", default="1.2.0", help="Version number (default: 1.2.0)")
     parser.add_argument("--skip-encrypt", action="store_true", help="Skip encryption step (use existing .json.enc)")
     args = parser.parse_args()
 

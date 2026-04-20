@@ -1,0 +1,78 @@
+{
+  "name": "overdue_invoice_snapshot",
+  "description": "Fetch recent Zoho Books invoices and summarize them by status for an overdue invoice review.",
+  "version": "1.0",
+  "connector": "zoho_books",
+  "llm_provider": "claude",
+  "supports": [
+    "text"
+  ],
+  "steps": [
+    {
+      "step_name": "fetch_invoices",
+      "type": "tool",
+      "on_error": "stop",
+      "tool": "zoho_books_list_invoices",
+      "params": {
+        "limit": 50,
+        "status": "overdue"
+      }
+    },
+    {
+      "step_name": "summarize_invoices",
+      "type": "transform",
+      "on_error": "continue",
+      "operation": "aggregate",
+      "input_step": "fetch_invoices",
+      "group_by": [
+        "status",
+        "customer_name"
+      ]
+    }
+  ],
+  "context": {
+    "local_credentials": {
+      "zoho_client_id": "paste_client_id_or_env_reference_here",
+      "zoho_client_secret": "paste_client_secret_or_env_reference_here",
+      "zoho_redirect_uri": "http://localhost:8000/callback",
+      "organization_id": "optional_zoho_books_org_id"
+    },
+    "auth_tokens": {
+      "access_token": "optional_local_access_token",
+      "refresh_token": "optional_local_refresh_token",
+      "token_storage_note": "Stored locally only. Prefer storage/tokens.json for live tokens."
+    },
+    "workflows": {
+      "trigger": "Run when user asks for overdue invoice review",
+      "sequence": [
+        "Fetch overdue invoices",
+        "Group invoices by status and customer",
+        "Return summary in client reporting format"
+      ],
+      "approval_required_before_write_actions": true
+    },
+    "business_rules": {
+      "overdue_threshold_days": 30,
+      "approval_required_for_amount_above": 50000,
+      "write_actions_require_confirmation": true,
+      "exclude_customers": []
+    },
+    "custom_preferences": {
+      "naming_convention": "Customer - Invoice Number - Due Date",
+      "approval_workflow": "Send high-value exceptions to finance manager",
+      "reporting_format": "status_summary_then_action_items",
+      "currency": "INR"
+    },
+    "business_parameters": {
+      "gst_number": "22AAAAA0000A1Z5",
+      "chart_of_accounts": {
+        "sales": "Sales",
+        "tax_payable": "GST Payable"
+      },
+      "crm_field_mappings": {
+        "customer_name": "Account Name",
+        "gstin": "GSTIN"
+      }
+    }
+  }
+}

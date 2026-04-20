@@ -27,6 +27,8 @@ The installer:
 - Writes selected connectors to `config\connector_config.json`.
 - Creates local runtime files under `storage\`.
 - Encrypts base skill files when the encryption script is available.
+- Creates Word skill template folders under `skills\client_docs\zoho_books\`.
+- Keeps generated client skill JSON under `skills\client\zoho_books\`.
 - Optionally activates a ReckLabs license key.
 - Writes Claude Desktop MCP configuration.
 
@@ -151,6 +153,46 @@ skills\skill_versions.json
 ```
 
 Only encrypted base skills in `skills\base\` are updated. Client customizations in `skills\client\` are preserved.
+
+---
+
+## Custom Skills In Word
+
+Users customize client skills by editing Microsoft Word `.docx` templates. The agent imports the Word document, validates the workflow, converts it to skill JSON internally, and saves the generated JSON under:
+
+```text
+skills\client\zoho_books\<skill_id>.json
+```
+
+Editable templates live here:
+
+```text
+skills\client_docs\zoho_books\
+```
+
+Useful prompts:
+
+```text
+List skill templates.
+```
+
+```text
+Import this Word skill template: C:\ReckLabs\ai-agent\skills\client_docs\zoho_books\zoho_books_skill_template.docx
+```
+
+```text
+List client skills.
+```
+
+```text
+Validate this client skill: C:\ReckLabs\ai-agent\skills\client\zoho_books\overdue_invoice_snapshot.json
+```
+
+Claude runs imported skills by their namespaced ID, for example:
+
+```text
+Run skill zoho_books.overdue_invoice_snapshot.
+```
 
 Useful prompts:
 

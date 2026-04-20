@@ -166,6 +166,17 @@ class SkillExecutor:
                     for skill_name in connector_names:
                         self._load_connector_skill(connector_name, skill_name)
 
+        # Client-only connector skills — skills/client/<connector>/*.json.
+        # These are generated from user-edited Word templates and run as connector.skill_id.
+        if SKILLS_CLIENT_DIR.exists():
+            for connector_dir in SKILLS_CLIENT_DIR.iterdir():
+                if not connector_dir.is_dir():
+                    continue
+                connector_name = connector_dir.name
+                for f in connector_dir.glob("*.json"):
+                    if f.stem not in RESERVED_SKILL_FILES:
+                        self._load_connector_skill(connector_name, f.stem)
+
         # Legacy flat skill loading — disabled by default.
         # Enable with env var: RECKLABS_ENABLE_LEGACY_FLAT_SKILLS=1
         if os.environ.get("RECKLABS_ENABLE_LEGACY_FLAT_SKILLS") == "1":
@@ -217,10 +228,7 @@ class SkillExecutor:
                     logger.error("Cannot load %s/%s: %s", connector_name, skill_name, e)
                     return
 
-        if base is None:
-            return
-
-        # Load client override
+        # Load client override or client-only skill
         client = {}
         client_path = client_dir / f"{skill_name}.json" if client_dir.exists() else None
         if client_path and client_path.exists():
@@ -229,7 +237,15 @@ class SkillExecutor:
             except Exception as e:
                 logger.error("Cannot load client skill %s/%s: %s", connector_name, skill_name, e)
 
-        merged = self._merge_layers(base, client)
+        if base is None and not client:
+            return
+
+        if base is None:
+            merged = dict(client)
+            merged.setdefault("connector", connector_name)
+        else:
+            merged = self._merge_layers(base, client)
+
         namespaced_name = f"{connector_name}.{skill_name}"
         self._skills[namespaced_name] = merged
         logger.info("Loaded connector skill: %s", namespaced_name)

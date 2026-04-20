@@ -37,10 +37,36 @@ if not defined PYTHON_EXE (
 )
 
 if not defined PYTHON_EXE (
-    echo ERROR: Python not found.
-    echo Please install Python 3.10+ from https://python.org and re-run this installer.
-    pause
-    exit /b 1
+    echo Python not found. Attempting automatic Python 3.12 install...
+    where winget >nul 2>&1
+    if errorlevel 1 (
+        echo ERROR: Python not found and winget is unavailable.
+        echo Please install Python 3.10+ from https://python.org and re-run this installer.
+        pause
+        exit /b 1
+    )
+    winget install --id Python.Python.3.12 -e --silent --accept-package-agreements --accept-source-agreements
+    if errorlevel 1 (
+        echo ERROR: Automatic Python install failed.
+        echo Please install Python 3.10+ from https://python.org and re-run this installer.
+        pause
+        exit /b 1
+    )
+    if exist "%LOCALAPPDATA%\Programs\Python\Python312\python.exe" set "PYTHON_EXE=%LOCALAPPDATA%\Programs\Python\Python312\python.exe"
+    if not defined PYTHON_EXE if exist "C:\Python312\python.exe" set "PYTHON_EXE=C:\Python312\python.exe"
+    if not defined PYTHON_EXE (
+        where python >nul 2>&1
+        if not errorlevel 1 (
+            for /f "tokens=*" %%p in ('where python 2^>nul') do (
+                if not defined PYTHON_EXE set "PYTHON_EXE=%%p"
+            )
+        )
+    )
+    if not defined PYTHON_EXE (
+        echo ERROR: Python install completed but python.exe was not found.
+        pause
+        exit /b 1
+    )
 )
 
 "%PYTHON_EXE%" --version >nul 2>&1
@@ -76,6 +102,8 @@ if not exist "%AGENT_DIR%\skills\base" mkdir "%AGENT_DIR%\skills\base"
 if not exist "%AGENT_DIR%\skills\base\zoho_books" mkdir "%AGENT_DIR%\skills\base\zoho_books"
 if not exist "%AGENT_DIR%\skills\client" mkdir "%AGENT_DIR%\skills\client"
 if not exist "%AGENT_DIR%\skills\client\zoho_books" mkdir "%AGENT_DIR%\skills\client\zoho_books"
+if not exist "%AGENT_DIR%\skills\client_docs" mkdir "%AGENT_DIR%\skills\client_docs"
+if not exist "%AGENT_DIR%\skills\client_docs\zoho_books" mkdir "%AGENT_DIR%\skills\client_docs\zoho_books"
 
 :: ---- Optional: License Key ----
 echo.
@@ -146,29 +174,8 @@ echo ============================================================
 echo   Installation Complete!
 echo ============================================================
 echo.
-echo Next steps:
-echo   1. Add your Zoho OAuth credentials to: %AGENT_DIR%\.env
-echo      ZOHO_CLIENT_ID=your_client_id
-echo      ZOHO_CLIENT_SECRET=your_client_secret
-echo      ZOHO_REDIRECT_URI=http://localhost:8000/callback
-echo      (Get these from Zoho API Console: https://api-console.zoho.in/)
-echo.
-echo   2. Restart Claude Desktop completely (kill all instances)
-echo.
-echo   3. In Claude Desktop, say: "Authenticate with Zoho Books"
-echo      Your browser will open the Zoho login page.
-echo      Log in with your Zoho account. Done.
-echo.
-echo   4. Try: "Show my invoices" or "Review expenses"
-echo.
-echo Important notes:
-echo   - Default GST: 18%%, Default TDS: 10%%, Currency: INR
-echo   - These are demo defaults. Verify with your accountant before real filings.
-echo   - Data domain: India (zoho.in)
-echo.
-echo Config location: %MCP_CONFIG%
-echo Agent location:  %AGENT_DIR%
-echo Python used:     %PYTHON_EXE%
+echo ReckLabs AI Agent is ready. Restart Claude Desktop and say:
+echo   "Authenticate with Zoho Books"
 echo.
 pause
 exit /b 0

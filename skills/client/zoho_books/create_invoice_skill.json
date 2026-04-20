@@ -1,0 +1,32 @@
+{
+  "name": "create_invoice_skill",
+  "display_name": "Create Invoice Skill",
+  "description": "Create an invoice for the customer",
+  "version": "1.0",
+  "format": "simple",
+  "source_doc": "create_test.docx",
+  "steps": [
+    {
+      "step_name": "fetch_data",
+      "tool": "zoho_books_list_invoices",
+      "params": {
+        "limit": 30,
+        "status": "overdue"
+      },
+      "on_error": "stop",
+      "approval_required": true
+    },
+    {
+      "step_name": "summarise",
+      "tool": "summarise_results",
+      "params": {
+        "group_by": "status",
+        "source_step": "fetch_data"
+      },
+      "on_error": "continue"
+    }
+  ],
+  "business_rules": "Flag invoices above 50000",
+  "notes": "Indian GST applies",
+  "approval_required": true
+}

@@ -1,0 +1,30 @@
+{
+  "name": "read_only_expenses",
+  "display_name": "Read Only Expenses",
+  "description": "Fetch all expenses",
+  "version": "1.0",
+  "format": "simple",
+  "source_doc": "readonly.docx",
+  "steps": [
+    {
+      "step_name": "fetch_data",
+      "tool": "zoho_books_list_expenses",
+      "params": {
+        "limit": 30,
+        "status": "overdue"
+      },
+      "on_error": "stop"
+    },
+    {
+      "step_name": "summarise",
+      "tool": "summarise_results",
+      "params": {
+        "group_by": "status",
+        "source_step": "fetch_data"
+      },
+      "on_error": "continue"
+    }
+  ],
+  "business_rules": "Flag invoices above 50000",
+  "notes": "Indian GST applies"
+}

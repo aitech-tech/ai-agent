@@ -15,6 +15,7 @@ STORAGE_DIR = BASE_DIR / "storage"
 SKILLS_DIR = BASE_DIR / "skills"
 SKILLS_BASE_DIR = SKILLS_DIR / "base"
 SKILLS_CLIENT_DIR = SKILLS_DIR / "client"
+SKILLS_CLIENT_DOCS_DIR = SKILLS_DIR / "client_docs"
 
 # Storage files
 TOKENS_FILE = STORAGE_DIR / "tokens.json"
@@ -93,6 +94,7 @@ def ensure_storage():
     STORAGE_DIR.mkdir(exist_ok=True)
     (SKILLS_BASE_DIR / "zoho_books").mkdir(parents=True, exist_ok=True)
     (SKILLS_CLIENT_DIR / "zoho_books").mkdir(parents=True, exist_ok=True)
+    (SKILLS_CLIENT_DOCS_DIR / "zoho_books").mkdir(parents=True, exist_ok=True)
 
     if not TOKENS_FILE.exists():
         TOKENS_FILE.write_text("{}")

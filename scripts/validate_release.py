@@ -5,7 +5,7 @@ Fails with exit code 1 if any forbidden file is found inside the zip.
 Called automatically by build_release.py after packaging.
 
 Usage:
-    python scripts/validate_release.py dist/recklabs-ai-agent-v1.0.1.zip
+    python scripts/validate_release.py dist/recklabs-ai-agent-v1.2.0.zip
 """
 import sys
 import zipfile
@@ -16,7 +16,11 @@ from pathlib import Path
 # ------------------------------------------------------------------
 
 # Any zip entry matching these exact names (basename) is forbidden
-FORBIDDEN_NAMES = {}
+FORBIDDEN_NAMES = {
+    "README.md",
+    "AI Recklabs with security included.pdf",
+    "recklabs-agent-session-context.pdf",
+}
 
 # Any zip entry whose path contains these substrings is forbidden
 FORBIDDEN_SUBSTRINGS = {
@@ -31,6 +35,7 @@ FORBIDDEN_SUFFIXES = (
     ".pyc",
     ".pyo",
     ".pyd",
+    ".pdf",
 )
 
 # Any zip entry path matching these patterns is forbidden
@@ -60,6 +65,9 @@ REQUIRED_CHECKS = [
     )),
     ("installer/install.bat", lambda entries: any(
         "installer/install.bat" in e for e in entries
+    )),
+    ("skills/client_docs/zoho_books/*.docx", lambda entries: any(
+        "skills/client_docs/zoho_books/" in e and e.endswith(".docx") for e in entries
     )),
     ("main.py", lambda entries: any(
         e.endswith("/main.py") for e in entries
@@ -97,6 +105,13 @@ def validate(zip_path: Path) -> bool:
         # Plaintext base skills
         if is_plaintext_base_skill(entry):
             errors.append(f"  PLAINTEXT SKILL (IP LEAK): {entry}")
+
+        # Private generated client skill JSON must not ship
+        parts = entry.split("/")
+        if (len(parts) >= 5
+                and parts[1] == "skills" and parts[2] == "client"
+                and entry.endswith(".json")):
+            errors.append(f"  PRIVATE CLIENT SKILL: {entry}")
 
     # Required files must be present
     for label, check in REQUIRED_CHECKS:

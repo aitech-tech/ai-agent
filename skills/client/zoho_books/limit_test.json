@@ -1,0 +1,30 @@
+{
+  "name": "limit_test",
+  "display_name": "Limit Test",
+  "description": "Fetch all overdue invoices and group by status",
+  "version": "1.0",
+  "format": "simple",
+  "source_doc": "limit_test.docx",
+  "steps": [
+    {
+      "step_name": "fetch_data",
+      "tool": "zoho_books_list_invoices",
+      "params": {
+        "status": "overdue",
+        "limit": 30
+      },
+      "on_error": "stop"
+    },
+    {
+      "step_name": "summarise",
+      "tool": "summarise_results",
+      "params": {
+        "group_by": "status",
+        "source_step": "fetch_data"
+      },
+      "on_error": "continue"
+    }
+  ],
+  "business_rules": "Flag invoices above 50000",
+  "notes": "Indian GST applies"
+}

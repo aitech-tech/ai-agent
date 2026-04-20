@@ -27,6 +27,7 @@ from agent.skill_executor import SkillExecutor
 from tools.skill_tools import SKILL_TOOLS, set_executor
 from tools.health_tools import HEALTH_TOOLS
 from tools.platform_tools import PLATFORM_TOOLS
+from tools.word_skill_tools import WORD_SKILL_TOOLS
 
 LOG_FILE = Path(__file__).parent / "storage" / "agent.log"
 LOG_FILE.parent.mkdir(exist_ok=True)
@@ -64,7 +65,7 @@ def main():
     logger.info("Selected connectors: %s", selected)
 
     connector_tools = _load_connector_tools(selected)
-    all_tools = connector_tools + SKILL_TOOLS + HEALTH_TOOLS + PLATFORM_TOOLS
+    all_tools = connector_tools + SKILL_TOOLS + HEALTH_TOOLS + PLATFORM_TOOLS + WORD_SKILL_TOOLS
 
     tool_registry = build_tool_registry(all_tools)
     executor = SkillExecutor(tool_registry)

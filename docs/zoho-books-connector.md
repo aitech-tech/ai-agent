@@ -1,6 +1,6 @@
 # Zoho Books Connector
 
-**Version:** 1.2.0 — Direct API mode only. No Zoho MCP, no Zoho CRM.
+**Version:** 1.2.0 - Direct API mode only. No Zoho MCP, no Zoho CRM.
 
 ---
 
@@ -75,7 +75,38 @@ Fully quit Claude Desktop from the system tray (not just close the window), then
 
 ---
 
-### Step 5 — Authenticate
+### Step 5 — Customize Skills In Word
+
+Client custom skills are edited in Microsoft Word, not by hand-editing JSON. Open a `.docx` template from:
+
+```text
+skills\client_docs\zoho_books\
+```
+
+After editing the template, ask Claude to import it. The agent converts the Word document into validated skill JSON internally and saves it to:
+
+```text
+skills\client\zoho_books\<skill_id>.json
+```
+
+The skill then loads as:
+
+```text
+zoho_books.<skill_id>
+```
+
+Useful tools in Claude:
+
+| Tool | Purpose |
+|---|---|
+| `list_skill_templates` | Shows available Word `.docx` skill templates |
+| `import_skill_from_word` | Converts a Word template into validated client JSON |
+| `list_client_skills` | Shows generated client skill JSON files |
+| `validate_client_skill` | Validates a generated client skill JSON file |
+
+---
+
+### Step 6 — Authenticate
 
 In Claude, type:
 

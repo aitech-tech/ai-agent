@@ -1,0 +1,26 @@
+{
+  "name": "vendor_review",
+  "description": "List vendors from Zoho Books and check data completeness (email, GST number, phone).",
+  "version": "1.0",
+  "connector": "zoho_books",
+  "llm_provider": "claude",
+  "supports": ["text"],
+  "steps": [
+    {
+      "step_name": "fetch_vendors",
+      "type": "tool",
+      "tool": "zoho_books_list_contacts",
+      "params": {"contact_type": "vendor", "limit": 50},
+      "on_error": "stop"
+    },
+    {
+      "step_name": "check_completeness",
+      "type": "transform",
+      "operation": "aggregate",
+      "input_step": "fetch_vendors",
+      "group_by": ["contact_type"],
+      "completeness_fields": ["email", "gst_no", "phone"],
+      "on_error": "continue"
+    }
+  ]
+}

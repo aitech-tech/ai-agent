@@ -36,23 +36,23 @@ FORBIDDEN_SUFFIXES = (
 # Any zip entry path matching these patterns is forbidden
 # (checked after stripping the top-level folder prefix e.g. "recklabs-ai-agent-v1.0.1/")
 def is_plaintext_base_skill(entry: str) -> bool:
-    """skills/base/<name>.json (not .json.enc) must never ship."""
+    """skills/base/**/<name>.json (not .json.enc) must never ship."""
     parts = entry.split("/")
     # strip leading version folder
     if len(parts) > 1:
         parts = parts[1:]
-    return (
-        len(parts) >= 3
-        and parts[0] == "skills"
-        and parts[1] == "base"
-        and parts[2].endswith(".json")
-        and not parts[2].endswith(".json.enc")
-    )
+    # Match any depth under skills/base/ that ends in .json but not .json.enc
+    if len(parts) < 3:
+        return False
+    if parts[0] != "skills" or parts[1] != "base":
+        return False
+    filename = parts[-1]
+    return filename.endswith(".json") and not filename.endswith(".json.enc")
 
 
 # Required entries (relative to inner folder, using glob-style checks)
 REQUIRED_CHECKS = [
-    ("skills/base/*.json.enc", lambda entries: any(
+    ("skills/base/**/*.json.enc", lambda entries: any(
         "skills/base/" in e and e.endswith(".json.enc") for e in entries
     )),
     (".env.example", lambda entries: any(

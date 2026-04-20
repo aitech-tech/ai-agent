@@ -1,0 +1,34 @@
+{
+  "name": "financials_overview",
+  "description": "Merge invoices and bills from Zoho Books into a unified financial summary",
+  "version": "1.0",
+  "connector": "zoho_books",
+  "llm_provider": "claude",
+  "supports": ["text"],
+  "steps": [
+    {
+      "step_name": "fetch_invoices",
+      "type": "tool",
+      "tool": "zoho_books_get_invoices",
+      "params": {"limit": 20},
+      "on_error": "stop"
+    },
+    {
+      "step_name": "fetch_bills",
+      "type": "tool",
+      "tool": "zoho_books_get_bills",
+      "params": {"limit": 20},
+      "on_error": "stop"
+    },
+    {
+      "step_name": "financial_summary",
+      "type": "transform",
+      "operation": "merge",
+      "input_steps": {
+        "invoices": "fetch_invoices",
+        "bills": "fetch_bills"
+      },
+      "on_error": "continue"
+    }
+  ]
+}

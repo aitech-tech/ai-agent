@@ -1,0 +1,25 @@
+{
+  "name": "purchase_order_review",
+  "description": "Fetch purchase orders from Zoho Books and summarize by status.",
+  "version": "1.0",
+  "connector": "zoho_books",
+  "llm_provider": "claude",
+  "supports": ["text"],
+  "steps": [
+    {
+      "step_name": "fetch_purchase_orders",
+      "type": "tool",
+      "tool": "zoho_books_list_purchase_orders",
+      "params": {"limit": 50},
+      "on_error": "stop"
+    },
+    {
+      "step_name": "summarize_purchase_orders",
+      "type": "transform",
+      "operation": "aggregate",
+      "input_step": "fetch_purchase_orders",
+      "group_by": ["status", "vendor_name"],
+      "on_error": "continue"
+    }
+  ]
+}

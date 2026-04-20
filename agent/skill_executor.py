@@ -1,16 +1,17 @@
 """
 Skill executor — 2-layer skill system per ReckLabs Phase 1 architecture.
 
-Layer 1 (Base): Encrypted .json.enc files in skills/base/ — platform-curated IP.
+Layer 1 (Base): Encrypted .json.enc files in skills/base/<connector>/ — platform-curated IP.
   Best-practice workflows, optimal API sequences, industry-specific defaults.
   AES-256 encrypted; only licensed MCP runtime can decrypt.
 
-Layer 2 (Client): Plain .json files in skills/client/ — client customisation.
+Layer 2 (Client): Plain .json files in skills/client/<connector>/ — client customisation.
   API credentials, custom params, workflow overrides, business-specific values.
   Always readable and editable by the client.
 
-At runtime: MCP server merges both layers. Client overrides apply on top of base.
-Falls back to flat skills/*.json for backward compatibility.
+At runtime: MCP server merges both layers (namespaced: connector.skill_name).
+Flat skills/*.json loading is disabled by default; enable with:
+  RECKLABS_ENABLE_LEGACY_FLAT_SKILLS=1
 
 Step types:
   "tool"      (default) — calls a registered MCP tool by name
@@ -19,6 +20,7 @@ Step types:
 """
 import json
 import logging
+import os
 
 from config.settings import SKILLS_DIR, SKILLS_BASE_DIR, SKILLS_CLIENT_DIR
 
@@ -149,26 +151,88 @@ class SkillExecutor:
     # ------------------------------------------------------------------
 
     def _load_all(self) -> None:
-        names: set[str] = set()
-
+        # Primary: namespaced connector skills — skills/base/<connector>/*.json[.enc]
         if SKILLS_BASE_DIR.exists():
-            for f in SKILLS_BASE_DIR.iterdir():
-                if f.name.endswith(".json.enc"):
-                    names.add(f.name[:-9])
-                elif f.suffix == ".json":
-                    names.add(f.stem)
+            for connector_dir in SKILLS_BASE_DIR.iterdir():
+                if connector_dir.is_dir():
+                    connector_name = connector_dir.name
+                    connector_names: set[str] = set()
+                    for f in connector_dir.iterdir():
+                        if f.is_file():
+                            if f.name.endswith(".json.enc"):
+                                connector_names.add(f.name[:-9])
+                            elif f.suffix == ".json" and f.stem not in RESERVED_SKILL_FILES:
+                                connector_names.add(f.stem)
+                    for skill_name in connector_names:
+                        self._load_connector_skill(connector_name, skill_name)
 
-        if SKILLS_CLIENT_DIR.exists():
-            for f in SKILLS_CLIENT_DIR.glob("*.json"):
-                names.add(f.stem)
+        # Legacy flat skill loading — disabled by default.
+        # Enable with env var: RECKLABS_ENABLE_LEGACY_FLAT_SKILLS=1
+        if os.environ.get("RECKLABS_ENABLE_LEGACY_FLAT_SKILLS") == "1":
+            logger.warning("Legacy flat skill loading enabled (RECKLABS_ENABLE_LEGACY_FLAT_SKILLS=1)")
+            names: set[str] = set()
 
-        if SKILLS_DIR.exists():
-            for f in SKILLS_DIR.glob("*.json"):
-                if f.stem not in RESERVED_SKILL_FILES:
-                    names.add(f.stem)
+            if SKILLS_BASE_DIR.exists():
+                for f in SKILLS_BASE_DIR.iterdir():
+                    if f.is_file():
+                        if f.name.endswith(".json.enc"):
+                            names.add(f.name[:-9])
+                        elif f.suffix == ".json" and f.stem not in RESERVED_SKILL_FILES:
+                            names.add(f.stem)
 
-        for name in names:
-            self._load_skill(name)
+            if SKILLS_CLIENT_DIR.exists():
+                for f in SKILLS_CLIENT_DIR.glob("*.json"):
+                    if f.stem not in RESERVED_SKILL_FILES:
+                        names.add(f.stem)
+
+            if SKILLS_DIR.exists():
+                for f in SKILLS_DIR.glob("*.json"):
+                    if f.stem not in RESERVED_SKILL_FILES:
+                        names.add(f.stem)
+
+            for name in names:
+                self._load_skill(name)
+
+    def _load_connector_skill(self, connector_name: str, skill_name: str) -> None:
+        """Load a skill from a connector subfolder, namespaced as connector.skill_name."""
+        base_dir = SKILLS_BASE_DIR / connector_name
+        client_dir = SKILLS_CLIENT_DIR / connector_name
+
+        # Load base
+        base = None
+        enc_path = base_dir / f"{skill_name}.json.enc"
+        if enc_path.exists():
+            try:
+                from skills.skill_crypto import load_encrypted_skill
+                base = load_encrypted_skill(enc_path)
+            except Exception as e:
+                logger.error("Cannot decrypt %s/%s: %s", connector_name, skill_name, e)
+                return
+        else:
+            plain_path = base_dir / f"{skill_name}.json"
+            if plain_path.exists():
+                try:
+                    base = json.loads(plain_path.read_text(encoding="utf-8"))
+                except Exception as e:
+                    logger.error("Cannot load %s/%s: %s", connector_name, skill_name, e)
+                    return
+
+        if base is None:
+            return
+
+        # Load client override
+        client = {}
+        client_path = client_dir / f"{skill_name}.json" if client_dir.exists() else None
+        if client_path and client_path.exists():
+            try:
+                client = json.loads(client_path.read_text(encoding="utf-8"))
+            except Exception as e:
+                logger.error("Cannot load client skill %s/%s: %s", connector_name, skill_name, e)
+
+        merged = self._merge_layers(base, client)
+        namespaced_name = f"{connector_name}.{skill_name}"
+        self._skills[namespaced_name] = merged
+        logger.info("Loaded connector skill: %s", namespaced_name)
 
     def _load_skill(self, name: str) -> None:
         base = self._load_base_layer(name)
@@ -205,23 +269,32 @@ class SkillExecutor:
         return list(self._skills.keys())
 
     def list_skills(self) -> list[dict]:
-        return [
-            {
-                "name": s.get("name", n),
+        out = []
+        for n, s in self._skills.items():
+            # n is the registry key — always the executable ID (namespaced if connector skill)
+            # display_name: human title without connector prefix
+            raw_name = s.get("name", n)
+            display_name = raw_name.split(".")[-1].replace("_", " ").title() if "." in n else raw_name
+            # connector: from skill data or inferred from namespaced key
+            connector = s.get("connector", n.split(".")[0] if "." in n else "")
+            out.append({
+                "id": n,
+                "name": n,
+                "display_name": display_name,
                 "description": s.get("description", ""),
                 "version": s.get("version", "1.0"),
-                "connector": s.get("connector", ""),
+                "connector": connector,
                 "llm_provider": s.get("llm_provider", "claude"),
                 "supports": s.get("supports", ["text"]),
                 "steps": len(s.get("steps", [])),
-            }
-            for n, s in self._skills.items()
-        ]
+            })
+        return out
 
     def get_skill(self, name: str) -> dict:
         if name not in self._skills:
+            available = list(self._skills.keys())
             raise SkillError(
-                f"Skill '{name}' not found. Available: {list(self._skills)}"
+                f"Skill '{name}' not found. Available skill IDs: {available}"
             )
         return self._skills[name]
 
@@ -245,12 +318,25 @@ class SkillExecutor:
         for i, step in enumerate(steps):
             step_name = step.get("step_name", f"step_{i + 1}")
             step_type = step.get("type", "tool")
+            on_error = step.get("on_error", "stop")
 
             try:
                 if step_type == "transform":
                     output = self._execute_transform_step(step, step_name, step_outputs)
                 else:
                     output = self._execute_tool_step(step, step_name, step_outputs, exec_context)
+
+                # Treat explicit success:false from the tool as a step failure
+                if isinstance(output, dict) and output.get("success") is False:
+                    err_msg = output.get("error", "tool_failure")
+                    results[step_name] = {"status": "error", "output": output}
+                    step_outputs[step_name] = output
+                    logger.warning("Skill '%s' step '%s' tool returned success:false — %s", name, step_name, err_msg)
+                    if on_error != "continue":
+                        raise SkillError(
+                            f"Skill '{name}' failed at step '{step_name}': {err_msg}"
+                        )
+                    continue
 
                 results[step_name] = {"status": "ok", "output": output}
                 step_outputs[step_name] = output
@@ -260,7 +346,7 @@ class SkillExecutor:
             except Exception as e:
                 results[step_name] = {"status": "error", "error": str(e)}
                 logger.error("Skill '%s' step '%s' failed: %s", name, step_name, e)
-                if step.get("on_error") != "continue":
+                if on_error != "continue":
                     raise SkillError(
                         f"Skill '{name}' failed at step '{step_name}': {e}"
                     ) from e

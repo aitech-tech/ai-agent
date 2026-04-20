@@ -1,0 +1,12 @@
+{
+  "connector_id": "zoho_books",
+  "display_name": "Zoho Books",
+  "category": "Accounting & Finance",
+  "version": "1.0.0",
+  "modes": ["official_mcp", "legacy_direct_api"],
+  "default_mode": "official_mcp",
+  "description": "Zoho Books — invoices, bills, customers, vendors, expenses, items, taxes.",
+  "docs": "docs/zoho-books-connector.md",
+  "auth": "zoho_oauth2",
+  "plans": ["free", "starter", "professional", "enterprise"]
+}

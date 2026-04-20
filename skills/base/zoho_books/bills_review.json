@@ -1,0 +1,25 @@
+{
+  "name": "bills_review",
+  "description": "Fetch recent bills from Zoho Books and return structured data with status breakdown",
+  "version": "1.0",
+  "connector": "zoho_books",
+  "llm_provider": "claude",
+  "supports": ["text"],
+  "steps": [
+    {
+      "step_name": "fetch_bills",
+      "type": "tool",
+      "tool": "zoho_books_get_bills",
+      "params": {"limit": 20},
+      "on_error": "stop"
+    },
+    {
+      "step_name": "summarize_bills",
+      "type": "transform",
+      "operation": "aggregate",
+      "input_step": "fetch_bills",
+      "group_by": ["status", "vendor_name"],
+      "on_error": "continue"
+    }
+  ]
+}

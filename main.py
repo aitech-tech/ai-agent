@@ -1,11 +1,10 @@
 """
-ReckLabs AI Agent — MCP server entry point (Phase 1).
+ReckLabs AI Agent — MCP server entry point (Zoho Books build v1.2.0).
 
 Architecture:
-  - Tools layer: Zoho CRM tools + Skill tools + Health tools + Platform tools
-  - Skills layer: 2-layer system (base encrypted + client customisation)
-  - Connectors layer: Registry with versioning + full catalog
-  - License layer: Tier-based access management
+  - Tools: Zoho Books tools (51) + Skill tools + Health tools + Platform tools
+  - Skills: 2-layer system (base encrypted + client customisation)
+  - Connector: zoho_books (direct API, India endpoint, zoho.in)
 
 Configure Claude Desktop to launch this via the MCP config.
 See installer/install.bat for one-click setup.
@@ -15,7 +14,6 @@ import logging
 import sys
 from pathlib import Path
 
-# Ensure the project root is on sys.path so all imports resolve
 sys.path.insert(0, str(Path(__file__).parent))
 
 # Force UTF-8 on stdin/stdout — Windows defaults to cp1252 which cannot
@@ -30,9 +28,6 @@ from tools.skill_tools import SKILL_TOOLS, set_executor
 from tools.health_tools import HEALTH_TOOLS
 from tools.platform_tools import PLATFORM_TOOLS
 
-# ------------------------------------------------------------------
-# Logging — file only; stdout is reserved for MCP JSON-RPC protocol
-# ------------------------------------------------------------------
 LOG_FILE = Path(__file__).parent / "storage" / "agent.log"
 LOG_FILE.parent.mkdir(exist_ok=True)
 
@@ -49,35 +44,32 @@ def build_tool_registry(all_tools: list[dict]) -> dict:
 
 
 def _load_connector_tools(selected: list[str]) -> list[dict]:
-    """Return tool lists only for the connectors the user selected at install time."""
+    """Return tools for selected connectors only."""
     connector_tools = []
     for name in selected:
-        if name == "zoho":
-            from tools.zoho_tools import ZOHO_TOOLS
-            connector_tools.extend(ZOHO_TOOLS)
-            logger.info("Loaded tools: zoho (%d tools)", len(ZOHO_TOOLS))
+        if name == "zoho_books":
+            from connectors.zoho_books.tools import ZOHO_BOOKS_TOOLS
+            connector_tools.extend(ZOHO_BOOKS_TOOLS)
+            logger.info("Loaded tools: zoho_books (%d tools)", len(ZOHO_BOOKS_TOOLS))
         else:
-            logger.warning("Connector '%s' selected but no tool module found — skipping", name)
+            logger.warning("Connector '%s' selected but not available in this build — skipping", name)
     return connector_tools
 
 
 def main():
     ensure_storage()
-    logger.info("Starting ReckLabs AI Agent v1.0.0 (Phase 1)")
+    logger.info("Starting ReckLabs AI Agent v1.2.0 (Zoho Books build)")
 
     selected = load_selected_connectors()
     logger.info("Selected connectors: %s", selected)
 
-    # Load tools for selected connectors only
     connector_tools = _load_connector_tools(selected)
     all_tools = connector_tools + SKILL_TOOLS + HEALTH_TOOLS + PLATFORM_TOOLS
 
-    # Wire skill executor (skills call tools by name)
     tool_registry = build_tool_registry(all_tools)
     executor = SkillExecutor(tool_registry)
     set_executor(executor)
 
-    # Build and start MCP server
     server = MCPServer()
     server.register_tools(all_tools)
 

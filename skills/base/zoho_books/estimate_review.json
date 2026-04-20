@@ -1,0 +1,25 @@
+{
+  "name": "estimate_review",
+  "description": "Fetch estimates (quotes) from Zoho Books and summarize by status.",
+  "version": "1.0",
+  "connector": "zoho_books",
+  "llm_provider": "claude",
+  "supports": ["text"],
+  "steps": [
+    {
+      "step_name": "fetch_estimates",
+      "type": "tool",
+      "tool": "zoho_books_list_estimates",
+      "params": {"limit": 50},
+      "on_error": "stop"
+    },
+    {
+      "step_name": "summarize_estimates",
+      "type": "transform",
+      "operation": "aggregate",
+      "input_step": "fetch_estimates",
+      "group_by": ["status", "customer_name"],
+      "on_error": "continue"
+    }
+  ]
+}

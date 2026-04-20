@@ -1,0 +1,25 @@
+{
+  "name": "create_customer",
+  "description": "Create a customer contact in Zoho Books with Indian defaults: currency INR, gst_treatment business_gst.",
+  "version": "1.0",
+  "connector": "zoho_books",
+  "llm_provider": "claude",
+  "supports": ["text"],
+  "steps": [
+    {
+      "step_name": "create_customer",
+      "type": "tool",
+      "tool": "zoho_books_create_contact",
+      "params": {
+        "contact_name": "{{context.contact_name}}",
+        "contact_type": "customer",
+        "email": "{{context.email}}",
+        "phone": "{{context.phone}}",
+        "gst_no": "{{context.gst_no}}",
+        "gst_treatment": "{{context.gst_treatment}}",
+        "currency_code": "INR"
+      },
+      "on_error": "stop"
+    }
+  ]
+}

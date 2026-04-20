@@ -1,0 +1,22 @@
+{
+  "name": "create_invoice",
+  "description": "Create an invoice in Zoho Books from context: customer_id, line_items, date. Defaults: currency INR.",
+  "version": "2.0",
+  "connector": "zoho_books",
+  "llm_provider": "claude",
+  "supports": ["text"],
+  "steps": [
+    {
+      "step_name": "create_invoice",
+      "type": "tool",
+      "tool": "zoho_books_create_invoice",
+      "params": {
+        "customer_id": "{{context.customer_id}}",
+        "line_items": "{{context.line_items}}",
+        "date": "{{context.date}}",
+        "currency_code": "{{context.currency_code}}"
+      },
+      "on_error": "stop"
+    }
+  ]
+}

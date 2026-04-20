@@ -1,0 +1,24 @@
+{
+  "name": "create_item_with_gst",
+  "description": "Create an item (product/service) in Zoho Books with Indian defaults: currency INR. Include tax_id for GST. Demo GST default: 18% — verify before use.",
+  "version": "1.0",
+  "connector": "zoho_books",
+  "llm_provider": "claude",
+  "supports": ["text"],
+  "steps": [
+    {
+      "step_name": "create_item",
+      "type": "tool",
+      "tool": "zoho_books_create_item",
+      "params": {
+        "name": "{{context.name}}",
+        "rate": "{{context.rate}}",
+        "description": "{{context.description}}",
+        "tax_id": "{{context.tax_id}}",
+        "unit": "{{context.unit}}",
+        "currency_code": "INR"
+      },
+      "on_error": "stop"
+    }
+  ]
+}

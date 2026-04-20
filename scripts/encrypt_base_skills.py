@@ -26,8 +26,8 @@ def encrypt_all(skill_name: str = None, delete_plain: bool = False):
         print(f"ERROR: skills/base/ not found at {SKILLS_BASE_DIR}")
         sys.exit(1)
 
-    pattern = f"{skill_name}.json" if skill_name else "*.json"
-    files = list(SKILLS_BASE_DIR.glob(pattern))
+    pattern = f"**/{skill_name}.json" if skill_name else "**/*.json"
+    files = list(SKILLS_BASE_DIR.rglob("*.json") if not skill_name else SKILLS_BASE_DIR.rglob(f"{skill_name}.json"))
 
     if not files:
         print(f"No plain .json files found in {SKILLS_BASE_DIR}")
@@ -53,8 +53,7 @@ def encrypt_all(skill_name: str = None, delete_plain: bool = False):
 
 def verify_all(skill_name: str = None):
     """Decrypt and pretty-print all .json.enc files to verify they're readable."""
-    pattern = f"{skill_name}.json.enc" if skill_name else "*.json.enc"
-    files = list(SKILLS_BASE_DIR.glob(pattern))
+    files = list(SKILLS_BASE_DIR.rglob("*.json.enc") if not skill_name else SKILLS_BASE_DIR.rglob(f"{skill_name}.json.enc"))
 
     if not files:
         print("No .json.enc files found to verify.")

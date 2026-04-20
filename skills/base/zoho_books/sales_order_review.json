@@ -1,0 +1,25 @@
+{
+  "name": "sales_order_review",
+  "description": "Fetch sales orders from Zoho Books and summarize by status.",
+  "version": "1.0",
+  "connector": "zoho_books",
+  "llm_provider": "claude",
+  "supports": ["text"],
+  "steps": [
+    {
+      "step_name": "fetch_sales_orders",
+      "type": "tool",
+      "tool": "zoho_books_list_sales_orders",
+      "params": {"limit": 50},
+      "on_error": "stop"
+    },
+    {
+      "step_name": "summarize_sales_orders",
+      "type": "transform",
+      "operation": "aggregate",
+      "input_step": "fetch_sales_orders",
+      "group_by": ["status", "customer_name"],
+      "on_error": "continue"
+    }
+  ]
+}

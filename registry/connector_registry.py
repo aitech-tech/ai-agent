@@ -1,14 +1,10 @@
 """
-ConnectorRegistry — dynamic connector loader, instance manager, and catalog.
+ConnectorRegistry — connector loader, instance manager, and catalog.
 
-Phase 1 architecture:
-  - Registry holds implemented connector classes + pinned version metadata
-  - CONNECTOR_CATALOG lists all planned connectors (available, coming_soon, planned)
-  - This catalog drives the website connector library browser
+Active connectors: zoho_books (direct API, India endpoint)
+Catalog lists planned/coming-soon connectors for the website connector browser.
 """
-import json
 import logging
-from pathlib import Path
 from typing import Type
 
 from connectors.base_connector import BaseConnector
@@ -16,25 +12,24 @@ from connectors.base_connector import BaseConnector
 logger = logging.getLogger(__name__)
 
 
-# Full connector catalog per PDF Phase 1 specification.
+# Full connector catalog — drives the website connector library browser.
 # status: "available" | "coming_soon" | "planned"
 CONNECTOR_CATALOG: dict[str, dict] = {
-    # CRM
-    "zoho_crm": {
-        "name": "Zoho CRM",
-        "category": "CRM",
-        "status": "available",
-        "description": "Full Zoho CRM integration — leads, contacts, accounts, search.",
-        "plans": ["free", "starter", "professional", "enterprise"],
-        "icon": "🏢",
-    },
     "zoho_books": {
         "name": "Zoho Books",
         "category": "Accounting & Finance",
         "status": "available",
-        "description": "Zoho Books — invoices, bills, customers, vendors, organizations. Shared OAuth with Zoho CRM.",
+        "description": "Zoho Books — invoices, estimates, sales orders, purchase orders, expenses, items, taxes, contacts, payments. India endpoint (zoho.in). GST-ready.",
         "plans": ["free", "starter", "professional", "enterprise"],
         "icon": "📚",
+    },
+    "zoho_crm": {
+        "name": "Zoho CRM",
+        "category": "CRM",
+        "status": "coming_soon",
+        "description": "Zoho CRM — leads, contacts, accounts, deals. Coming soon.",
+        "plans": ["starter", "professional", "enterprise"],
+        "icon": "🏢",
     },
     "hubspot": {
         "name": "HubSpot",
@@ -52,7 +47,6 @@ CONNECTOR_CATALOG: dict[str, dict] = {
         "plans": ["professional", "enterprise"],
         "icon": "☁️",
     },
-    # Accounting & Finance
     "quickbooks": {
         "name": "QuickBooks",
         "category": "Accounting & Finance",
@@ -69,7 +63,6 @@ CONNECTOR_CATALOG: dict[str, dict] = {
         "plans": ["starter", "professional", "enterprise"],
         "icon": "📒",
     },
-    # Lead Generation
     "apollo": {
         "name": "Apollo.io",
         "category": "Lead Generation",
@@ -94,7 +87,6 @@ CONNECTOR_CATALOG: dict[str, dict] = {
         "plans": ["starter", "professional", "enterprise"],
         "icon": "🏹",
     },
-    # Communication
     "gmail": {
         "name": "Gmail",
         "category": "Communication",
@@ -119,7 +111,6 @@ CONNECTOR_CATALOG: dict[str, dict] = {
         "plans": ["professional", "enterprise"],
         "icon": "💬",
     },
-    # Productivity
     "google_drive": {
         "name": "Google Drive",
         "category": "Productivity",
@@ -141,7 +132,8 @@ CONNECTOR_CATALOG: dict[str, dict] = {
 
 class ConnectorRegistry:
     """
-    Singleton registry: holds connector classes, cached instances, and version metadata.
+    Singleton registry: holds active connector classes, cached instances, and version metadata.
+    The CONNECTOR_CATALOG above is separate — it drives the website browser for all planned connectors.
     """
 
     _instance = None
@@ -174,7 +166,7 @@ class ConnectorRegistry:
     def get(self, name: str) -> BaseConnector:
         if name not in self._classes:
             raise KeyError(
-                f"Connector '{name}' not registered. Available: {list(self._classes)}"
+                f"Connector '{name}' not registered. Active: {list(self._classes)}"
             )
         if name not in self._instances:
             self._instances[name] = self._classes[name]()
@@ -201,60 +193,12 @@ class ConnectorRegistry:
 
 
 def _register_defaults(reg: ConnectorRegistry) -> None:
-    """
-    Register all connectors (active + coming-soon stubs).
-    Active connectors wrap open-source MCP packages curated from GitHub.
-    Stubs are pre-registered so the catalog and health dashboard show them correctly.
-    """
-    # --- Active connectors ---
+    """Register active connectors. Only zoho_books is active in this build."""
     try:
-        from connectors.zoho_connector import ZohoConnector
-        reg.register("zoho", ZohoConnector, version="1.0.0", api_version="v2")
+        from connectors.zoho_books.connector import ZohoBooksConnector
+        reg.register("zoho_books", ZohoBooksConnector, version="1.2.0", api_version="v3")
     except ImportError as e:
-        logger.warning("Could not load ZohoConnector: %s", e)
-
-    # --- Coming-soon stubs (curated from GitHub, activate by uncommenting package in requirements.txt) ---
-    try:
-        from connectors.hubspot_connector import HubSpotConnector
-        reg.register("hubspot", HubSpotConnector, version="0.0.0", api_version="v3")
-    except ImportError as e:
-        logger.warning("Could not load HubSpotConnector: %s", e)
-
-    try:
-        from connectors.salesforce_connector import SalesforceConnector
-        reg.register("salesforce", SalesforceConnector, version="0.0.0", api_version="v58")
-    except ImportError as e:
-        logger.warning("Could not load SalesforceConnector: %s", e)
-
-    try:
-        from connectors.gmail_connector import GmailConnector
-        reg.register("gmail", GmailConnector, version="0.0.0", api_version="v1")
-    except ImportError as e:
-        logger.warning("Could not load GmailConnector: %s", e)
-
-    try:
-        from connectors.google_drive_connector import GoogleDriveConnector
-        reg.register("google_drive", GoogleDriveConnector, version="0.0.0", api_version="v3")
-    except ImportError as e:
-        logger.warning("Could not load GoogleDriveConnector: %s", e)
-
-    try:
-        from connectors.slack_connector import SlackConnector
-        reg.register("slack", SlackConnector, version="0.0.0", api_version="v2")
-    except ImportError as e:
-        logger.warning("Could not load SlackConnector: %s", e)
-
-    try:
-        from connectors.notion_connector import NotionConnector
-        reg.register("notion", NotionConnector, version="0.0.0", api_version="v1")
-    except ImportError as e:
-        logger.warning("Could not load NotionConnector: %s", e)
-
-    try:
-        from connectors.apollo_connector import ApolloConnector
-        reg.register("apollo", ApolloConnector, version="0.0.0", api_version="v1")
-    except ImportError as e:
-        logger.warning("Could not load ApolloConnector: %s", e)
+        logger.warning("Could not load ZohoBooksConnector: %s", e)
 
 
 # Module-level singleton — import this everywhere

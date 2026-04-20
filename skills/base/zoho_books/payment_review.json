@@ -1,0 +1,25 @@
+{
+  "name": "payment_review",
+  "description": "Fetch recent customer payments from Zoho Books and summarize payment data.",
+  "version": "1.0",
+  "connector": "zoho_books",
+  "llm_provider": "claude",
+  "supports": ["text"],
+  "steps": [
+    {
+      "step_name": "fetch_payments",
+      "type": "tool",
+      "tool": "zoho_books_list_customer_payments",
+      "params": {"limit": 50},
+      "on_error": "stop"
+    },
+    {
+      "step_name": "summarize_payments",
+      "type": "transform",
+      "operation": "aggregate",
+      "input_step": "fetch_payments",
+      "group_by": ["payment_mode", "customer_name"],
+      "on_error": "continue"
+    }
+  ]
+}

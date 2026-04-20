@@ -1,0 +1,8 @@
+{
+  "_comment": "Maps ReckLabs logical operation names to official Zoho Books MCP tool names. Set official_tool once Zoho publishes official MCP docs.",
+  "list_invoices": {"official_tool": "TO_BE_CONFIGURED", "description": "Map to Zoho Books List Invoices tool"},
+  "create_invoice": {"official_tool": "TO_BE_CONFIGURED", "description": "Map to Zoho Books Create Invoice tool"},
+  "get_invoice": {"official_tool": "TO_BE_CONFIGURED", "description": "Map to Zoho Books Get Invoice tool"},
+  "list_customers": {"official_tool": "TO_BE_CONFIGURED", "description": "Map to Zoho Books List Contacts (customers) tool"},
+  "get_bills": {"official_tool": "TO_BE_CONFIGURED", "description": "Map to Zoho Books List Bills tool"}
+}

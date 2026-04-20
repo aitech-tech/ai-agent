@@ -1,0 +1,26 @@
+{
+  "name": "customers_review",
+  "description": "Fetch customers from Zoho Books and return completeness and data quality summary",
+  "version": "1.0",
+  "connector": "zoho_books",
+  "llm_provider": "claude",
+  "supports": ["text"],
+  "steps": [
+    {
+      "step_name": "fetch_customers",
+      "type": "tool",
+      "tool": "zoho_books_get_customers",
+      "params": {"limit": 20},
+      "on_error": "stop"
+    },
+    {
+      "step_name": "summarize_customers",
+      "type": "transform",
+      "operation": "aggregate",
+      "input_step": "fetch_customers",
+      "group_by": ["status"],
+      "completeness_fields": ["email", "phone", "billing_address"],
+      "on_error": "continue"
+    }
+  ]
+}

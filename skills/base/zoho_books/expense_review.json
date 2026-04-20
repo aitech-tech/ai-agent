@@ -1,0 +1,25 @@
+{
+  "name": "expense_review",
+  "description": "Fetch expenses from Zoho Books and group by status and category.",
+  "version": "1.0",
+  "connector": "zoho_books",
+  "llm_provider": "claude",
+  "supports": ["text"],
+  "steps": [
+    {
+      "step_name": "fetch_expenses",
+      "type": "tool",
+      "tool": "zoho_books_list_expenses",
+      "params": {"limit": 50},
+      "on_error": "stop"
+    },
+    {
+      "step_name": "summarize_expenses",
+      "type": "transform",
+      "operation": "aggregate",
+      "input_step": "fetch_expenses",
+      "group_by": ["status", "account_name"],
+      "on_error": "continue"
+    }
+  ]
+}

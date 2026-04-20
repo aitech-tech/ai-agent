@@ -1,0 +1,25 @@
+{
+  "name": "invoice_review",
+  "description": "Fetch invoices from Zoho Books, group by status and customer, and summarize outstanding amounts.",
+  "version": "2.0",
+  "connector": "zoho_books",
+  "llm_provider": "claude",
+  "supports": ["text"],
+  "steps": [
+    {
+      "step_name": "fetch_invoices",
+      "type": "tool",
+      "tool": "zoho_books_list_invoices",
+      "params": {"limit": 50},
+      "on_error": "stop"
+    },
+    {
+      "step_name": "summarize_invoices",
+      "type": "transform",
+      "operation": "aggregate",
+      "input_step": "fetch_invoices",
+      "group_by": ["status", "customer_name"],
+      "on_error": "continue"
+    }
+  ]
+}

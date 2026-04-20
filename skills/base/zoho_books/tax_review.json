@@ -1,0 +1,25 @@
+{
+  "name": "tax_review",
+  "description": "List all taxes configured in Zoho Books. Highlights GST entries. Default demo assumption: GST 18%, TDS 10% — verify with your accountant.",
+  "version": "1.0",
+  "connector": "zoho_books",
+  "llm_provider": "claude",
+  "supports": ["text"],
+  "steps": [
+    {
+      "step_name": "fetch_taxes",
+      "type": "tool",
+      "tool": "zoho_books_list_taxes",
+      "params": {},
+      "on_error": "stop"
+    },
+    {
+      "step_name": "summarize_taxes",
+      "type": "transform",
+      "operation": "aggregate",
+      "input_step": "fetch_taxes",
+      "group_by": ["tax_type"],
+      "on_error": "continue"
+    }
+  ]
+}

@@ -11,5 +11,25 @@
   "pipeline_review": {
     "version": "2.0",
     "installed_at": "2026-04-19"
+  },
+  "invoice_review": {
+    "version": "1.0",
+    "installed_at": "2026-04-19"
+  },
+  "bills_review": {
+    "version": "1.0",
+    "installed_at": "2026-04-19"
+  },
+  "financials_overview": {
+    "version": "1.0",
+    "installed_at": "2026-04-19"
+  },
+  "customers_review": {
+    "version": "1.0",
+    "installed_at": "2026-04-19"
+  },
+  "create_invoice": {
+    "version": "1.0",
+    "installed_at": "2026-04-19"
   }
 }

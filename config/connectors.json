@@ -1,6 +1,0 @@
-{
-  "_comment": "Connector config. Credentials (client_id, client_secret) are loaded from the .env file — do NOT add secrets here.",
-  "zoho": {
-    "redirect_uri": "http://localhost:8000/callback"
-  }
-}

@@ -20,6 +20,7 @@ Python report tools do the data fetching, filtering, aggregation, and calculatio
 - Do not call the same report tool twice to cross-check figures.
 - If a tool returns a warning about approximate filtering, mention it briefly.
 - Use Indian rupee formatting as returned by the tool.
+- Never combine amounts across different currencies unless the tool explicitly provides converted totals. If `totals_by_currency` is present, narrate each currency separately.
 - If the tool returns an authentication error, tell the user to authenticate with Zoho Books first.
 - Use raw `zoho_books_create_*`, `zoho_books_update_*`, and `zoho_books_delete_*` tools only for write workflows.
 - For write workflows, summarise the proposed action and ask for confirmation before execution when practical.

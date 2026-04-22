@@ -341,6 +341,104 @@ def test_top_records_empty():
     assert top_records([], ["balance"], ["customer_name"]) == []
 
 
+# ---------------------------------------------------------------------------
+# format_currency
+# ---------------------------------------------------------------------------
+
+from products.zoho_books._base import (
+    format_currency,
+    currency_code as get_currency_code,
+    totals_by_currency,
+)
+
+
+def test_format_currency_inr():
+    assert format_currency(100000, "INR") == "₹1,00,000"
+
+
+def test_format_currency_zar():
+    assert format_currency(239.01, "ZAR") == "R239.01"
+
+
+def test_format_currency_zar_thousands():
+    assert format_currency(5000.0, "ZAR") == "R5,000.00"
+
+
+def test_format_currency_usd():
+    assert format_currency(1234.56, "USD") == "$1,234.56"
+
+
+def test_format_currency_eur():
+    assert format_currency(500.0, "EUR") == "€500.00"
+
+
+def test_format_currency_gbp():
+    assert format_currency(750.0, "GBP") == "£750.00"
+
+
+def test_format_currency_unknown_aed():
+    assert format_currency(239.01, "AED") == "AED 239.01"
+
+
+def test_format_currency_negative_zar():
+    result = format_currency(-239.01, "ZAR")
+    assert result.startswith("-R")
+    assert "239.01" in result
+
+
+def test_format_currency_default_is_inr():
+    assert format_currency(1000) == "₹1,000"
+
+
+# ---------------------------------------------------------------------------
+# currency_code
+# ---------------------------------------------------------------------------
+
+def test_currency_code_from_record():
+    assert get_currency_code({"currency_code": "ZAR", "amount": 100.0}) == "ZAR"
+
+
+def test_currency_code_default_inr():
+    assert get_currency_code({"amount": 100.0}) == "INR"
+
+
+def test_currency_code_custom_default():
+    assert get_currency_code({}, default="USD") == "USD"
+
+
+# ---------------------------------------------------------------------------
+# totals_by_currency
+# ---------------------------------------------------------------------------
+
+def test_totals_by_currency_single():
+    records = [{"balance": 1000.0}, {"balance": 2000.0}]
+    result = totals_by_currency(records, ["balance"])
+    assert "INR" in result
+    assert result["INR"]["count"] == 2
+    assert result["INR"]["amount"] == 3000.0
+    assert result["INR"]["amount_formatted"] == "₹3,000"
+
+
+def test_totals_by_currency_multi():
+    records = [
+        {"currency_code": "INR", "balance": 10000.0},
+        {"currency_code": "ZAR", "balance": 5000.0},
+        {"currency_code": "INR", "balance": 20000.0},
+    ]
+    result = totals_by_currency(records, ["balance"])
+    assert "INR" in result
+    assert "ZAR" in result
+    assert result["INR"]["count"] == 2
+    assert result["INR"]["amount"] == 30000.0
+    assert result["ZAR"]["count"] == 1
+    assert result["ZAR"]["amount"] == 5000.0
+    assert result["ZAR"]["amount_formatted"] == "R5,000.00"
+
+
+def test_totals_by_currency_empty():
+    assert totals_by_currency([], ["balance"]) == {}
+
+
 if __name__ == "__main__":
     test_to_float_int()
     test_to_float_float()
@@ -390,4 +488,19 @@ if __name__ == "__main__":
     test_top_records_cap()
     test_top_records_extra_fields()
     test_top_records_empty()
+    test_format_currency_inr()
+    test_format_currency_zar()
+    test_format_currency_zar_thousands()
+    test_format_currency_usd()
+    test_format_currency_eur()
+    test_format_currency_gbp()
+    test_format_currency_unknown_aed()
+    test_format_currency_negative_zar()
+    test_format_currency_default_is_inr()
+    test_currency_code_from_record()
+    test_currency_code_default_inr()
+    test_currency_code_custom_default()
+    test_totals_by_currency_single()
+    test_totals_by_currency_multi()
+    test_totals_by_currency_empty()
     print("\nAll _base tests passed.")

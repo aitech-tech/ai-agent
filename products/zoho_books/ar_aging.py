@@ -1,9 +1,11 @@
 """
-AR Aging Summary — receivables aging by due-date bucket.
+AR Aging Summary — open receivables as of today, aged by due-date bucket.
 """
+import datetime
 from products.zoho_books._base import (
     get_connector, cap_int, extract_records, bucket_by_due_date,
-    top_records, pct, format_inr, success_response, error_response,
+    top_records, pct, format_inr, format_currency, totals_by_currency,
+    success_response, error_response, _MULTI_CURRENCY_WARNING,
 )
 
 TOOL_NAME = "zb_ar_aging"
@@ -12,6 +14,7 @@ TOOL_DESCRIPTION = (
     "Returns a pre-processed AR Aging Summary for Zoho Books. "
     "Use for questions like 'How are my receivables?', 'Show AR aging', "
     "'What invoices are overdue by age?' "
+    "Reports open receivables as of today, not a monthly period. "
     "Returns a compact summary ready for narrative reporting. "
     "Call this tool first, then write the narrative directly from the result. "
     "Do not perform further calculations or fetch raw data unless the user asks for drilldown."
@@ -30,6 +33,7 @@ _NAME_FIELDS = ["customer_name", "contact_name", "name", "company_name"]
 
 def run(params: dict) -> dict:
     limit = cap_int(params.get("limit", 200), default=200, minimum=1, maximum=500)
+    as_of = datetime.date.today().isoformat()
 
     try:
         connector = get_connector()
@@ -70,27 +74,44 @@ def run(params: dict) -> dict:
             records_processed=0,
             records_returned=0,
             narrative_cue="No unpaid or overdue invoices found.",
+            as_of_date=as_of,
+            report_basis="open_receivables_as_of_date",
             total_outstanding=0.0,
             total_outstanding_formatted=format_inr(0),
             invoice_count=0,
             buckets={},
             critical_overdue_60_plus={"count": 0, "amount": 0.0, "amount_formatted": format_inr(0)},
             top_invoices=[],
+            totals_by_currency={},
+            multi_currency=False,
+            warnings=[],
         )
 
+    by_currency = totals_by_currency(records, _AMOUNT_FIELDS)
+    multi_currency = len(by_currency) > 1
+
     buckets = bucket_by_due_date(records, _AMOUNT_FIELDS)
-    total_outstanding = sum(b["amount"] for b in buckets.values())
     invoice_count = sum(b["count"] for b in buckets.values())
 
-    # Add percentage share to each bucket
-    for b in buckets.values():
-        b["pct_of_total"] = pct(b["amount"], total_outstanding)
+    warnings: list = []
+    if multi_currency:
+        total_outstanding = None
+        total_outstanding_formatted = None
+        warnings.append(_MULTI_CURRENCY_WARNING)
+        for b in buckets.values():
+            b["pct_of_total"] = None
+    else:
+        total_outstanding = sum(b["amount"] for b in buckets.values())
+        single_code = next(iter(by_currency))
+        total_outstanding_formatted = format_currency(total_outstanding, single_code)
+        for b in buckets.values():
+            b["pct_of_total"] = pct(b["amount"], total_outstanding)
 
-    critical_amt = (
-        buckets["61_90_days"]["amount"] + buckets["90_plus_days"]["amount"]
-    )
     critical_count = (
         buckets["61_90_days"]["count"] + buckets["90_plus_days"]["count"]
+    )
+    critical_amt = (
+        buckets["61_90_days"]["amount"] + buckets["90_plus_days"]["amount"]
     )
 
     top_invs = top_records(
@@ -98,25 +119,50 @@ def run(params: dict) -> dict:
         extra_fields=["invoice_number", "due_date", "status"],
     )
 
+    if multi_currency:
+        currency_summary = ", ".join(
+            f"{code}: {data['amount_formatted']}"
+            for code, data in by_currency.items()
+        )
+        narrative_cue = (
+            f"{invoice_count} open receivables as of {as_of}. "
+            f"Multiple currencies — narrate totals separately: {currency_summary}. "
+            f"Critical (60+ days): {critical_count} invoices. "
+            "Summarise by bucket and highlight critical overdue amounts per currency."
+        )
+    else:
+        single_code = next(iter(by_currency))
+        narrative_cue = (
+            f"Total outstanding: {total_outstanding_formatted} across "
+            f"{invoice_count} invoices as of {as_of}. "
+            f"Critical (60+ days): {format_currency(critical_amt, single_code)} "
+            f"({critical_count} invoices). "
+            "Summarise by bucket and highlight critical overdue amounts."
+        )
+
+    critical_entry = {
+        "count": critical_count,
+        "amount": critical_amt if not multi_currency else None,
+        "amount_formatted": (
+            format_currency(critical_amt, next(iter(by_currency)))
+            if not multi_currency else None
+        ),
+    }
+
     return success_response(
         report="AR Aging Summary",
         records_processed=records_processed,
         records_returned=len(top_invs),
-        narrative_cue=(
-            f"Total outstanding: {format_inr(total_outstanding)} across "
-            f"{invoice_count} invoices. "
-            f"Critical (60+ days): {format_inr(critical_amt)} "
-            f"({critical_count} invoices). "
-            "Summarise by bucket and highlight critical overdue amounts."
-        ),
+        narrative_cue=narrative_cue,
+        as_of_date=as_of,
+        report_basis="open_receivables_as_of_date",
         total_outstanding=total_outstanding,
-        total_outstanding_formatted=format_inr(total_outstanding),
+        total_outstanding_formatted=total_outstanding_formatted,
         invoice_count=invoice_count,
         buckets=buckets,
-        critical_overdue_60_plus={
-            "count": critical_count,
-            "amount": critical_amt,
-            "amount_formatted": format_inr(critical_amt),
-        },
+        critical_overdue_60_plus=critical_entry,
         top_invoices=top_invs,
+        totals_by_currency=by_currency,
+        multi_currency=multi_currency,
+        warnings=warnings,
     )

@@ -3,7 +3,8 @@ Overdue Invoices — summary of all overdue invoices with aging stats.
 """
 from products.zoho_books._base import (
     get_connector, cap_int, extract_records, top_records, group_amounts,
-    safe_amount, days_past_due, format_inr, success_response, error_response,
+    safe_amount, days_past_due, format_inr, format_currency, currency_code,
+    totals_by_currency, success_response, error_response, _MULTI_CURRENCY_WARNING,
 )
 
 TOOL_NAME = "zb_overdue_invoices"
@@ -58,28 +59,43 @@ def run(params: dict) -> dict:
             oldest_overdue_invoice=None,
             top_overdue_invoices=[],
             by_customer=[],
+            totals_by_currency={},
+            multi_currency=False,
+            warnings=[],
         )
 
-    total_overdue = 0.0
+    by_currency = totals_by_currency(records, _AMOUNT_FIELDS)
+    multi_currency = len(by_currency) > 1
+
+    warnings: list = []
+    if multi_currency:
+        total_overdue = None
+        total_overdue_formatted = None
+        warnings.append(_MULTI_CURRENCY_WARNING)
+    else:
+        single_code = next(iter(by_currency))
+        total_overdue = sum(v["amount"] for v in by_currency.values())
+        total_overdue_formatted = format_currency(total_overdue, single_code)
+
     days_list = []
     oldest_days = 0
     oldest_invoice = None
 
     for rec in records:
         amt = safe_amount(rec, _AMOUNT_FIELDS)
-        total_overdue += amt
         dpd = days_past_due(rec.get("due_date"))
         if dpd is not None:
             days_list.append(dpd)
             if dpd > oldest_days:
                 oldest_days = dpd
+                code = currency_code(rec)
                 oldest_invoice = {
                     "name": _safe_name(rec),
                     "invoice_number": rec.get("invoice_number"),
                     "due_date": rec.get("due_date"),
                     "days_overdue": dpd,
                     "amount": amt,
-                    "amount_formatted": format_inr(amt),
+                    "amount_formatted": format_currency(amt, code),
                 }
 
     avg_days = round(sum(days_list) / len(days_list), 1) if days_list else None
@@ -90,23 +106,40 @@ def run(params: dict) -> dict:
     )
     by_customer = group_amounts(records, _NAME_FIELDS, _AMOUNT_FIELDS, limit=10)
 
+    if multi_currency:
+        currency_summary = ", ".join(
+            f"{code}: {data['amount_formatted']}"
+            for code, data in by_currency.items()
+        )
+        narrative_cue = (
+            f"{records_processed} overdue invoices across multiple currencies: {currency_summary}. "
+            f"Average {avg_days} days overdue. "
+            "Narrate each currency separately. "
+            "List top customers by overdue amount and flag the oldest invoice."
+        )
+    else:
+        narrative_cue = (
+            f"{records_processed} overdue invoices totalling {total_overdue_formatted}. "
+            f"Average {avg_days} days overdue. "
+            "List top customers by overdue amount and flag the oldest invoice."
+        )
+
     return success_response(
         report="Overdue Invoices",
         records_processed=records_processed,
         records_returned=len(top_invs),
-        narrative_cue=(
-            f"{records_processed} overdue invoices totalling {format_inr(total_overdue)}. "
-            f"Average {avg_days} days overdue. "
-            "List top customers by overdue amount and flag the oldest invoice."
-        ),
+        narrative_cue=narrative_cue,
         total_overdue_amount=total_overdue,
-        total_overdue_formatted=format_inr(total_overdue),
+        total_overdue_formatted=total_overdue_formatted,
         invoice_count=records_processed,
         average_days_overdue=avg_days,
         oldest_overdue_days=oldest_days if days_list else None,
         oldest_overdue_invoice=oldest_invoice,
         top_overdue_invoices=top_invs,
         by_customer=by_customer,
+        totals_by_currency=by_currency,
+        multi_currency=multi_currency,
+        warnings=warnings,
     )
 
 

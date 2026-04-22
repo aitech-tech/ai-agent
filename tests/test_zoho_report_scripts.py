@@ -299,6 +299,84 @@ def test_ar_aging_auth_error():
     print("PASS: test_ar_aging_auth_error")
 
 
+def test_ar_aging_mixed_currencies():
+    """zb_ar_aging with INR + ZAR: multi_currency=True, total_outstanding=None, warning present."""
+    import products.zoho_books.ar_aging as ar_aging_mod
+    import products.zoho_books._base as base
+
+    _records = [
+        {"invoice_id": "1", "status": "overdue", "currency_code": "INR",
+         "balance": 10000.0, "due_date": "2024-02-01"},
+        {"invoice_id": "2", "status": "overdue", "currency_code": "ZAR",
+         "balance": 5000.0, "due_date": "2024-01-01"},
+        {"invoice_id": "3", "status": "unpaid", "currency_code": "INR",
+         "balance": 20000.0, "due_date": "2024-03-01"},
+    ]
+
+    class MixedConnector:
+        _authenticated = True
+        def list_invoices(self, status=None, limit=200, organization_id=None):
+            filtered = [r for r in _records if r["status"] == status] if status else _records
+            return {"success": True, "invoices": filtered}
+
+    orig_c = ar_aging_mod.get_connector
+    orig_t = base.today
+    ar_aging_mod.get_connector = lambda: MixedConnector()
+    base.today = lambda: __import__("datetime").date(2024, 4, 20)
+    try:
+        result = ar_aging_mod.run({})
+        assert result["success"] is True
+        assert result["multi_currency"] is True
+        assert result["total_outstanding"] is None
+        assert len(result["warnings"]) > 0
+        assert "Multiple currencies" in result["warnings"][0]
+        assert "INR" in result["totals_by_currency"]
+        assert "ZAR" in result["totals_by_currency"]
+        assert result["totals_by_currency"]["INR"]["amount"] == 30000.0
+        assert result["totals_by_currency"]["ZAR"]["amount"] == 5000.0
+        assert result["report_basis"] == "open_receivables_as_of_date"
+        assert "as_of_date" in result
+    finally:
+        ar_aging_mod.get_connector = orig_c
+        base.today = orig_t
+    print("PASS: test_ar_aging_mixed_currencies")
+
+
+def test_ar_aging_single_currency_preserves_total():
+    """zb_ar_aging with single currency: multi_currency=False, total_outstanding set."""
+    import products.zoho_books.ar_aging as ar_aging_mod
+    import products.zoho_books._base as base
+
+    _records = [
+        {"invoice_id": "1", "status": "overdue", "currency_code": "INR",
+         "balance": 10000.0, "due_date": "2024-02-01"},
+        {"invoice_id": "2", "status": "overdue", "currency_code": "INR",
+         "balance": 20000.0, "due_date": "2024-01-01"},
+    ]
+
+    class SingleCurrencyConnector:
+        _authenticated = True
+        def list_invoices(self, status=None, limit=200, organization_id=None):
+            filtered = [r for r in _records if r["status"] == status] if status else _records
+            return {"success": True, "invoices": filtered}
+
+    orig_c = ar_aging_mod.get_connector
+    orig_t = base.today
+    ar_aging_mod.get_connector = lambda: SingleCurrencyConnector()
+    base.today = lambda: __import__("datetime").date(2024, 4, 20)
+    try:
+        result = ar_aging_mod.run({})
+        assert result["success"] is True
+        assert result["multi_currency"] is False
+        assert result["total_outstanding"] == 30000.0
+        assert len(result["warnings"]) == 0
+        assert result["report_basis"] == "open_receivables_as_of_date"
+    finally:
+        ar_aging_mod.get_connector = orig_c
+        base.today = orig_t
+    print("PASS: test_ar_aging_single_currency_preserves_total")
+
+
 # ---------------------------------------------------------------------------
 # overdue_invoices tests
 # ---------------------------------------------------------------------------
@@ -316,10 +394,83 @@ def test_overdue_invoices_success():
         assert "narrative_cue" in result
         assert result["raw_data_returned"] is False
         assert result["currency"] == "INR"
+        assert "totals_by_currency" in result
+        assert "multi_currency" in result
+        assert "warnings" in result
     finally:
         _restore_connector(orig_c)
         _restore_today(orig_t)
     print("PASS: test_overdue_invoices_success")
+
+
+def test_overdue_invoices_mixed_currencies():
+    """zb_overdue_invoices with INR + ZAR: multi_currency=True, total_overdue_amount=None."""
+    import products.zoho_books.overdue_invoices as oi_mod
+    import products.zoho_books._base as base
+
+    _records = [
+        {"invoice_id": "1", "status": "overdue", "currency_code": "INR",
+         "balance": 15000.0, "due_date": "2024-02-01", "customer_name": "Alpha"},
+        {"invoice_id": "2", "status": "overdue", "currency_code": "ZAR",
+         "balance": 8000.0, "due_date": "2024-01-15", "customer_name": "Beta"},
+    ]
+
+    class MixedConnector:
+        _authenticated = True
+        def list_invoices(self, status=None, limit=100, organization_id=None):
+            return {"success": True, "invoices": _records}
+
+    orig_c = oi_mod.get_connector
+    orig_t = base.today
+    oi_mod.get_connector = lambda: MixedConnector()
+    base.today = lambda: __import__("datetime").date(2024, 4, 20)
+    try:
+        result = oi_mod.run({})
+        assert result["success"] is True
+        assert result["multi_currency"] is True
+        assert result["total_overdue_amount"] is None
+        assert len(result["warnings"]) > 0
+        assert "Multiple currencies" in result["warnings"][0]
+        assert "INR" in result["totals_by_currency"]
+        assert "ZAR" in result["totals_by_currency"]
+        assert result["totals_by_currency"]["INR"]["amount"] == 15000.0
+        assert result["totals_by_currency"]["ZAR"]["amount"] == 8000.0
+        assert result["totals_by_currency"]["ZAR"]["amount_formatted"] == "R8,000.00"
+    finally:
+        oi_mod.get_connector = orig_c
+        base.today = orig_t
+    print("PASS: test_overdue_invoices_mixed_currencies")
+
+
+def test_overdue_invoices_single_currency_preserves_total():
+    """zb_overdue_invoices with single currency: multi_currency=False, total_overdue_amount set."""
+    import products.zoho_books.overdue_invoices as oi_mod
+    import products.zoho_books._base as base
+
+    _records = [
+        {"invoice_id": "1", "status": "overdue", "currency_code": "INR",
+         "balance": 12000.0, "due_date": "2024-02-01", "customer_name": "Alpha"},
+    ]
+
+    class SingleConnector:
+        _authenticated = True
+        def list_invoices(self, status=None, limit=100, organization_id=None):
+            return {"success": True, "invoices": _records}
+
+    orig_c = oi_mod.get_connector
+    orig_t = base.today
+    oi_mod.get_connector = lambda: SingleConnector()
+    base.today = lambda: __import__("datetime").date(2024, 4, 20)
+    try:
+        result = oi_mod.run({})
+        assert result["success"] is True
+        assert result["multi_currency"] is False
+        assert result["total_overdue_amount"] == 12000.0
+        assert len(result["warnings"]) == 0
+    finally:
+        oi_mod.get_connector = orig_c
+        base.today = orig_t
+    print("PASS: test_overdue_invoices_single_currency_preserves_total")
 
 
 def test_overdue_invoices_empty():
@@ -655,10 +806,14 @@ if __name__ == "__main__":
     test_ar_aging_both_fetches_fail_returns_error()
     test_ar_aging_one_fetch_fails_other_has_records_returns_success()
     test_ar_aging_auth_error()
+    test_ar_aging_mixed_currencies()
+    test_ar_aging_single_currency_preserves_total()
     # overdue_invoices
     test_overdue_invoices_success()
     test_overdue_invoices_empty()
     test_overdue_invoices_top_capped()
+    test_overdue_invoices_mixed_currencies()
+    test_overdue_invoices_single_currency_preserves_total()
     # invoice_summary
     test_invoice_summary_success()
     test_invoice_summary_period_filtering()

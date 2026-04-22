@@ -361,6 +361,65 @@ def group_amounts(
 
 
 # ---------------------------------------------------------------------------
+# Currency helpers
+# ---------------------------------------------------------------------------
+
+_CURRENCY_SYMBOLS = {
+    "USD": "$",
+    "EUR": "€",
+    "GBP": "£",
+    "ZAR": "R",
+}
+
+_MULTI_CURRENCY_WARNING = (
+    "Multiple currencies detected. Totals are grouped by currency and are not converted."
+)
+
+
+def currency_code(record: dict, default: str = "INR") -> str:
+    """Return the currency code from a record dict, falling back to default."""
+    return record.get("currency_code") or default
+
+
+def format_currency(amount: float, currency_code: str = "INR") -> str:
+    """
+    Format an amount with its currency symbol/code.
+    INR uses Indian grouping (format_inr); others use standard 2-decimal formatting.
+    Examples: ZAR -> R1,234.56  USD -> $1,234.56  AED -> AED 1,234.56
+    """
+    if currency_code == "INR":
+        return format_inr(amount)
+    negative = amount < 0
+    formatted = f"{abs(amount):,.2f}"
+    sym = _CURRENCY_SYMBOLS.get(currency_code)
+    result = f"{sym}{formatted}" if sym else f"{currency_code} {formatted}"
+    return f"-{result}" if negative else result
+
+
+def totals_by_currency(records: list, amount_fields: list) -> dict:
+    """
+    Group records by currency_code, sum amounts.
+    Returns {code: {count, amount, amount_formatted}}.
+    """
+    groups: dict = {}
+    for rec in records:
+        code = currency_code(rec)
+        amt = safe_amount(rec, amount_fields)
+        if code not in groups:
+            groups[code] = {"count": 0, "amount": 0.0}
+        groups[code]["count"] += 1
+        groups[code]["amount"] += amt
+    return {
+        code: {
+            "count": data["count"],
+            "amount": data["amount"],
+            "amount_formatted": format_currency(data["amount"], code),
+        }
+        for code, data in groups.items()
+    }
+
+
+# ---------------------------------------------------------------------------
 # Standard response builders
 # ---------------------------------------------------------------------------
 

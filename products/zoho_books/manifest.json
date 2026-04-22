@@ -43,245 +43,245 @@
       "tool_name": "zb_vendor_balances",
       "script": "vendor_balances.py",
       "category": "Payables",
-      "status": "planned",
+      "status": "implemented",
       "description": "Outstanding payable balances per vendor."
     },
     {
       "tool_name": "zb_contact_list",
       "script": "contact_list.py",
       "category": "Contacts",
-      "status": "planned",
+      "status": "implemented",
       "description": "Summarised contact list with type, email, balance."
     },
     {
       "tool_name": "zb_contact_aging",
       "script": "contact_aging.py",
       "category": "Contacts",
-      "status": "planned",
+      "status": "implemented",
       "description": "Combined AR/AP aging per contact."
     },
     {
       "tool_name": "zb_outstanding_invoices",
       "script": "outstanding_invoices.py",
       "category": "Invoices",
-      "status": "planned",
+      "status": "implemented",
       "description": "All open (unpaid/sent) invoices with totals and top customers."
     },
     {
       "tool_name": "zb_payments_received",
       "script": "payments_received.py",
       "category": "Invoices",
-      "status": "planned",
+      "status": "implemented",
       "description": "Customer payments received in a period, grouped by payment mode."
     },
     {
       "tool_name": "zb_revenue_by_month",
       "script": "revenue_by_month.py",
       "category": "Invoices",
-      "status": "planned",
+      "status": "implemented",
       "description": "Monthly revenue trend from invoices for the current or last year."
     },
     {
       "tool_name": "zb_top_customers_revenue",
       "script": "top_customers_revenue.py",
       "category": "Invoices",
-      "status": "planned",
+      "status": "implemented",
       "description": "Top customers by total invoiced revenue for a period."
     },
     {
       "tool_name": "zb_recurring_invoices",
       "script": "recurring_invoices.py",
       "category": "Invoices",
-      "status": "planned",
+      "status": "implemented",
       "description": "Summary of recurring invoice profiles and monthly commitment."
     },
     {
       "tool_name": "zb_draft_invoices",
       "script": "draft_invoices.py",
       "category": "Invoices",
-      "status": "planned",
+      "status": "implemented",
       "description": "Count and total value of draft invoices pending dispatch."
     },
     {
       "tool_name": "zb_ap_aging",
       "script": "ap_aging.py",
       "category": "Payables",
-      "status": "planned",
+      "status": "implemented",
       "description": "AP aging buckets from bills, total payable, critical overdue."
     },
     {
       "tool_name": "zb_outstanding_bills",
       "script": "outstanding_bills.py",
       "category": "Payables",
-      "status": "planned",
+      "status": "implemented",
       "description": "All open bills with totals and top vendors."
     },
     {
       "tool_name": "zb_overdue_bills",
       "script": "overdue_bills.py",
       "category": "Payables",
-      "status": "planned",
+      "status": "implemented",
       "description": "Overdue bills with average days overdue and oldest bill."
     },
     {
       "tool_name": "zb_bills_by_vendor",
       "script": "bills_by_vendor.py",
       "category": "Payables",
-      "status": "planned",
+      "status": "implemented",
       "description": "Bills grouped by vendor with totals for a period."
     },
     {
       "tool_name": "zb_purchase_orders_summary",
       "script": "purchase_orders_summary.py",
       "category": "Payables",
-      "status": "planned",
+      "status": "implemented",
       "description": "Purchase order status breakdown and total committed value."
     },
     {
       "tool_name": "zb_vendor_payments",
       "script": "vendor_payments.py",
       "category": "Payables",
-      "status": "planned",
+      "status": "implemented",
       "description": "Vendor payments made in a period grouped by vendor."
     },
     {
       "tool_name": "zb_top_vendors_spend",
       "script": "top_vendors_spend.py",
       "category": "Payables",
-      "status": "planned",
+      "status": "implemented",
       "description": "Top vendors by total billed spend for a period."
     },
     {
       "tool_name": "zb_profit_loss",
       "script": "profit_loss.py",
       "category": "Financial Statements",
-      "status": "planned",
+      "status": "implemented",
       "description": "Estimated P&L from invoices and expenses. Requires statutory validation before use in filings."
     },
     {
       "tool_name": "zb_balance_sheet",
       "script": "balance_sheet.py",
       "category": "Financial Statements",
-      "status": "planned",
+      "status": "implemented",
       "description": "Estimated balance sheet summary. Requires statutory validation before use in filings."
     },
     {
       "tool_name": "zb_cash_flow",
       "script": "cash_flow.py",
       "category": "Financial Statements",
-      "status": "planned",
+      "status": "implemented",
       "description": "Estimated cash flow from payments received and vendor payments. Requires validation."
     },
     {
       "tool_name": "zb_trial_balance",
       "script": "trial_balance.py",
       "category": "Financial Statements",
-      "status": "planned",
+      "status": "implemented",
       "description": "Trial balance summary by account. Requires statutory validation."
     },
     {
       "tool_name": "zb_financial_overview",
       "script": "financial_overview.py",
       "category": "Financial Statements",
-      "status": "planned",
+      "status": "implemented",
       "description": "One-page financial overview: revenue, expenses, AR, AP, cash position."
     },
     {
       "tool_name": "zb_sales_summary",
       "script": "sales_summary.py",
       "category": "Sales",
-      "status": "planned",
+      "status": "implemented",
       "description": "Sales summary from invoices for a period: count, total, average."
     },
     {
       "tool_name": "zb_sales_orders_summary",
       "script": "sales_orders_summary.py",
       "category": "Sales",
-      "status": "planned",
+      "status": "implemented",
       "description": "Sales order status breakdown and total order value."
     },
     {
       "tool_name": "zb_estimates_summary",
       "script": "estimates_summary.py",
       "category": "Sales",
-      "status": "planned",
+      "status": "implemented",
       "description": "Estimates by status with conversion rate (accepted vs total)."
     },
     {
       "tool_name": "zb_sales_by_item",
       "script": "sales_by_item.py",
       "category": "Sales",
-      "status": "planned",
+      "status": "implemented",
       "description": "Revenue grouped by item/service for a period."
     },
     {
       "tool_name": "zb_expense_summary",
       "script": "expense_summary.py",
       "category": "Expenses",
-      "status": "planned",
+      "status": "implemented",
       "description": "Total expense summary for a period with status breakdown."
     },
     {
       "tool_name": "zb_top_vendors_expense",
       "script": "top_vendors_expense.py",
       "category": "Expenses",
-      "status": "planned",
+      "status": "implemented",
       "description": "Top vendors by expense amount for a period."
     },
     {
       "tool_name": "zb_cash_position",
       "script": "cash_position.py",
       "category": "Cash & Banking",
-      "status": "planned",
+      "status": "implemented",
       "description": "Current cash position across bank accounts."
     },
     {
       "tool_name": "zb_bank_accounts",
       "script": "bank_accounts.py",
       "category": "Cash & Banking",
-      "status": "planned",
+      "status": "implemented",
       "description": "Summary of bank accounts with current balances."
     },
     {
       "tool_name": "zb_gst_summary",
       "script": "gst_summary.py",
       "category": "Tax",
-      "status": "planned",
+      "status": "implemented",
       "description": "GST collected and input credit summary for a period. Requires statutory validation."
     },
     {
       "tool_name": "zb_tax_liability",
       "script": "tax_liability.py",
       "category": "Tax",
-      "status": "planned",
+      "status": "implemented",
       "description": "Estimated tax liability summary. Requires statutory validation before filing."
     },
     {
       "tool_name": "zb_tds_summary",
       "script": "tds_summary.py",
       "category": "Tax",
-      "status": "planned",
+      "status": "implemented",
       "description": "TDS deducted and collected summary. Requires statutory validation."
     },
     {
       "tool_name": "zb_inventory_summary",
       "script": "inventory_summary.py",
       "category": "Inventory",
-      "status": "planned",
+      "status": "implemented",
       "description": "Inventory items summary with stock value and top items by value."
     },
     {
       "tool_name": "zb_top_selling_items",
       "script": "top_selling_items.py",
       "category": "Inventory",
-      "status": "planned",
+      "status": "implemented",
       "description": "Top selling items by quantity and revenue for a period."
     },
     {
       "tool_name": "zb_item_price_list",
       "script": "item_price_list.py",
       "category": "Inventory",
-      "status": "planned",
+      "status": "implemented",
       "description": "Item/service price list. Cap: 50 items (exception to standard 10-item array cap)."
     }
   ]

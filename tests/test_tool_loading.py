@@ -1,7 +1,9 @@
-"""Test Zoho Books tool loading — all 51 tools present, no CRM tools."""
+"""Test Zoho Books tool loading — 51 raw + 40 report scripts = 91 total."""
 import sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
+
+from products.script_loader import load_manifest
 
 REQUIRED_TOOLS = [
     "zoho_books_authenticate",
@@ -66,6 +68,13 @@ CRM_TOOLS_MUST_NOT_EXIST = [
     "create_zoho_invoice",
 ]
 
+_RAW_COUNT = 51
+_REPORT_COUNT = sum(
+    1 for t in load_manifest("zoho_books").get("report_tools", [])
+    if t.get("status") == "implemented"
+)
+_TOTAL_COUNT = _RAW_COUNT + _REPORT_COUNT
+
 
 def test_all_51_zoho_books_tools_present():
     """ZOHO_BOOKS_TOOLS must contain all 51 required tools."""
@@ -73,7 +82,7 @@ def test_all_51_zoho_books_tools_present():
     tool_names = {t["name"] for t in ZOHO_BOOKS_TOOLS}
     missing = [t for t in REQUIRED_TOOLS if t not in tool_names]
     assert not missing, f"Missing tools: {missing}"
-    assert len(ZOHO_BOOKS_TOOLS) == 51, f"Expected 51 tools, got {len(ZOHO_BOOKS_TOOLS)}"
+    assert len(ZOHO_BOOKS_TOOLS) == _RAW_COUNT, f"Expected {_RAW_COUNT} tools, got {len(ZOHO_BOOKS_TOOLS)}"
     print(f"PASS: test_all_51_zoho_books_tools_present ({len(ZOHO_BOOKS_TOOLS)} tools)")
 
 
@@ -145,7 +154,7 @@ def test_tools_list_from_main_contains_only_books():
             f"CRM tool '{crm_name}' found in full tool list"
 
     books_count = sum(1 for n in all_names if n.startswith("zoho_books_"))
-    assert books_count == 51, f"Expected 51 zoho_books_* tools, got {books_count}"
+    assert books_count == _RAW_COUNT, f"Expected {_RAW_COUNT} zoho_books_* tools, got {books_count}"
     print(f"PASS: test_tools_list_from_main_contains_only_books ({len(all_tools)} total tools)")
 
 
@@ -158,25 +167,21 @@ def test_zoho_mcp_not_imported():
     print("PASS: test_zoho_mcp_not_imported")
 
 
-def test_load_connector_tools_returns_56():
-    """_load_connector_tools(['zoho_books']) must return 56 tools: 51 raw + 5 report scripts.
-
-    Replicates main._load_connector_tools without importing main (main replaces
-    sys.stdout at module level which would swallow earlier test output).
-    """
+def test_load_connector_tools_returns_expected_total():
+    """_load_connector_tools(['zoho_books']) must return 51 raw + all implemented report scripts."""
     from connectors.zoho_books.tools import ZOHO_BOOKS_TOOLS
     from products.script_loader import load_product_tools
 
     tools = list(ZOHO_BOOKS_TOOLS) + load_product_tools("zoho_books")
 
-    assert len(tools) == 56, f"Expected 56 tools, got {len(tools)}"
+    assert len(tools) == _TOTAL_COUNT, f"Expected {_TOTAL_COUNT} tools, got {len(tools)}"
     zb_raw = [t for t in tools if t["name"].startswith("zoho_books_")]
     zb_report = [t for t in tools if t["name"].startswith("zb_")]
-    assert len(zb_raw) == 51, f"Expected 51 zoho_books_ tools, got {len(zb_raw)}"
-    assert len(zb_report) == 5, f"Expected 5 zb_ tools, got {len(zb_report)}"
+    assert len(zb_raw) == _RAW_COUNT, f"Expected {_RAW_COUNT} zoho_books_ tools, got {len(zb_raw)}"
+    assert len(zb_report) == _REPORT_COUNT, f"Expected {_REPORT_COUNT} zb_ tools, got {len(zb_report)}"
     print(
-        f"PASS: test_load_connector_tools_returns_56 "
-        f"({len(zb_raw)} raw, {len(zb_report)} report scripts)"
+        f"PASS: test_load_connector_tools_returns_expected_total "
+        f"({len(zb_raw)} raw, {len(zb_report)} report scripts, {len(tools)} total)"
     )
 
 
@@ -188,5 +193,5 @@ if __name__ == "__main__":
     test_create_tools_have_required_fields()
     test_tools_list_from_main_contains_only_books()
     test_zoho_mcp_not_imported()
-    test_load_connector_tools_returns_56()
+    test_load_connector_tools_returns_expected_total()
     print("\nAll tool loading tests passed.")

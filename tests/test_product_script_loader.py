@@ -3,23 +3,25 @@ import sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from products.script_loader import load_product_tools, make_safe_fn
+import json
+from products.script_loader import load_product_tools, make_safe_fn, load_manifest
 
 
-EXPECTED_TOOL_NAMES = {
-    "zb_ar_aging",
-    "zb_overdue_invoices",
-    "zb_invoice_summary",
-    "zb_expense_by_category",
-    "zb_customer_balances",
-}
+def _expected_count() -> int:
+    """Derive expected tool count from manifest (implemented only)."""
+    manifest = load_manifest("zoho_books")
+    tools = manifest.get("report_tools", [])
+    return sum(1 for t in tools if t.get("status") == "implemented")
 
 
-def test_loads_5_zoho_books_tools():
-    """load_product_tools('zoho_books') must return exactly 5 tools."""
+def test_loads_expected_zoho_books_tools():
+    """load_product_tools('zoho_books') must return exactly as many tools as manifest has implemented."""
+    expected = _expected_count()
     tools = load_product_tools("zoho_books")
-    assert len(tools) == 5, f"Expected 5 tools, got {len(tools)}: {[t['name'] for t in tools]}"
-    print(f"PASS: test_loads_5_zoho_books_tools ({len(tools)} tools)")
+    assert len(tools) == expected, (
+        f"Expected {expected} tools (per manifest), got {len(tools)}: {[t['name'] for t in tools]}"
+    )
+    print(f"PASS: test_loads_expected_zoho_books_tools ({len(tools)} tools)")
 
 
 def test_all_tool_names_start_with_zb():
@@ -30,15 +32,14 @@ def test_all_tool_names_start_with_zb():
     print("PASS: test_all_tool_names_start_with_zb")
 
 
-def test_tool_names_are_expected():
-    """Loaded tool names must exactly match the 5 implemented scripts."""
-    tools = load_product_tools("zoho_books")
-    names = {t["name"] for t in tools}
-    missing = EXPECTED_TOOL_NAMES - names
-    extra = names - EXPECTED_TOOL_NAMES
-    assert not missing, f"Missing tools: {missing}"
-    assert not extra, f"Unexpected tools: {extra}"
-    print(f"PASS: test_tool_names_are_expected ({names})")
+def test_manifest_implemented_tools_all_loaded():
+    """Every tool listed as 'implemented' in manifest.json must be loaded."""
+    manifest = load_manifest("zoho_books")
+    implemented = {t["tool_name"] for t in manifest.get("report_tools", []) if t.get("status") == "implemented"}
+    loaded = {t["name"] for t in load_product_tools("zoho_books")}
+    missing = implemented - loaded
+    assert not missing, f"Implemented manifest tools not loaded: {missing}"
+    print(f"PASS: test_manifest_implemented_tools_all_loaded ({len(implemented)} tools)")
 
 
 def test_tool_names_are_unique():
@@ -158,9 +159,9 @@ def test_make_safe_fn_none_params_becomes_empty_dict():
 
 
 if __name__ == "__main__":
-    test_loads_5_zoho_books_tools()
+    test_loads_expected_zoho_books_tools()
     test_all_tool_names_start_with_zb()
-    test_tool_names_are_expected()
+    test_manifest_implemented_tools_all_loaded()
     test_tool_names_are_unique()
     test_tools_sorted_by_name()
     test_each_tool_has_required_fields()

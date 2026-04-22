@@ -190,6 +190,40 @@ def days_past_due(due_date_value) -> "int | None":
     return max(0, delta)
 
 
+def filter_by_period(records: list, date_fields: list, period: str) -> tuple:
+    """
+    Filter records to those whose date falls within the named period.
+    Returns (filtered_records, no_date_count, from_date_str, to_date_str).
+    Records with no usable date are included in filtered (counted separately).
+    """
+    from_date_str, to_date_str = date_range_for_period(period)
+    from_date = parse_date(from_date_str)
+    to_date = parse_date(to_date_str)
+    filtered, no_date_count = [], 0
+    for rec in records:
+        rec_date = None
+        for field in date_fields:
+            rec_date = parse_date(rec.get(field))
+            if rec_date:
+                break
+        if rec_date is None:
+            no_date_count += 1
+            filtered.append(rec)
+        elif from_date <= rec_date <= to_date:
+            filtered.append(rec)
+    return filtered, no_date_count, from_date_str, to_date_str
+
+
+def first_record_by_date(records: list, date_field: str) -> "dict | None":
+    """Return the record with the earliest value in date_field, or None."""
+    oldest_date, oldest = None, None
+    for rec in records:
+        d = parse_date(rec.get(date_field))
+        if d is not None and (oldest_date is None or d < oldest_date):
+            oldest_date, oldest = d, rec
+    return oldest
+
+
 # ---------------------------------------------------------------------------
 # Record field helpers
 # ---------------------------------------------------------------------------
@@ -360,6 +394,34 @@ def group_amounts(
     return result[:limit]
 
 
+def group_by_month(records: list, date_fields: list, amount_fields: list) -> list:
+    """
+    Group records by YYYY-MM, summing amounts.
+    Returns sorted list of {month, count, amount, amount_formatted}.
+    Records with no usable date are skipped.
+    """
+    months: dict = {}
+    for rec in records:
+        rec_date = None
+        for field in date_fields:
+            rec_date = parse_date(rec.get(field))
+            if rec_date:
+                break
+        if rec_date is None:
+            continue
+        key = rec_date.strftime("%Y-%m")
+        amt = safe_amount(rec, amount_fields)
+        if key not in months:
+            months[key] = {"count": 0, "amount": 0.0}
+        months[key]["count"] += 1
+        months[key]["amount"] += amt
+    return [
+        {"month": k, "count": v["count"], "amount": v["amount"],
+         "amount_formatted": format_inr(v["amount"])}
+        for k, v in sorted(months.items())
+    ]
+
+
 # ---------------------------------------------------------------------------
 # Currency helpers
 # ---------------------------------------------------------------------------
@@ -373,6 +435,11 @@ _CURRENCY_SYMBOLS = {
 
 _MULTI_CURRENCY_WARNING = (
     "Multiple currencies detected. Totals are grouped by currency and are not converted."
+)
+
+_ACCURACY_NOTE = (
+    "Operational estimate from available API list data. "
+    "Verify in Zoho Books and with your accountant before statutory use or filings."
 )
 
 

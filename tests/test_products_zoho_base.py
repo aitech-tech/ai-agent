@@ -406,6 +406,22 @@ def test_currency_code_custom_default():
     assert get_currency_code({}, default="USD") == "USD"
 
 
+def test_currency_code_uppercases_currency_code_field():
+    assert get_currency_code({"currency_code": "inr"}) == "INR"
+
+
+def test_currency_code_falls_back_to_currency_field():
+    assert get_currency_code({"currency": "zar"}) == "ZAR"
+
+
+def test_currency_code_falls_back_to_currency_id_field():
+    assert get_currency_code({"currency_id": "usd"}) == "USD"
+
+
+def test_currency_code_empty_record_returns_default():
+    assert get_currency_code({}) == "INR"
+
+
 # ---------------------------------------------------------------------------
 # totals_by_currency
 # ---------------------------------------------------------------------------
@@ -500,6 +516,10 @@ if __name__ == "__main__":
     test_currency_code_from_record()
     test_currency_code_default_inr()
     test_currency_code_custom_default()
+    test_currency_code_uppercases_currency_code_field()
+    test_currency_code_falls_back_to_currency_field()
+    test_currency_code_falls_back_to_currency_id_field()
+    test_currency_code_empty_record_returns_default()
     test_totals_by_currency_single()
     test_totals_by_currency_multi()
     test_totals_by_currency_empty()

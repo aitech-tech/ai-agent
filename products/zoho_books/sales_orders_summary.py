@@ -32,7 +32,7 @@ def run(params: dict) -> dict:
 
     warnings = []
     try:
-        records = extract_records(connector.list_salesorders(limit=limit), ["salesorders", "sales_orders"])
+        records = extract_records(connector.list_sales_orders(limit=limit), ["salesorders", "sales_orders"])
     except Exception as e:
         return error_response("fetch_failed", str(e))
 

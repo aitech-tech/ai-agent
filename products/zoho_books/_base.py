@@ -444,8 +444,16 @@ _ACCURACY_NOTE = (
 
 
 def currency_code(record: dict, default: str = "INR") -> str:
-    """Return the currency code from a record dict, falling back to default."""
-    return record.get("currency_code") or default
+    """Return the currency code from a record dict, falling back to default.
+
+    Checks fields in order: currency_code, currency, currency_id.
+    Returns an uppercase stripped value; falls back to uppercase default.
+    """
+    for field in ("currency_code", "currency", "currency_id"):
+        val = record.get(field)
+        if val and str(val).strip():
+            return str(val).strip().upper()
+    return default.strip().upper()
 
 
 def format_currency(amount: float, currency_code: str = "INR") -> str:

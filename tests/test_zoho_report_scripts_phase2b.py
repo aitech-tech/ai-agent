@@ -42,7 +42,7 @@ class FakeConnector:
     def list_customer_payments(self, limit=200, organization_id=None):
         return {"success": True, "customer_payments": self._customer_payments[:limit]}
 
-    def list_salesorders(self, limit=200, organization_id=None):
+    def list_sales_orders(self, limit=200, organization_id=None):
         return {"success": True, "salesorders": self._salesorders[:limit]}
 
     def list_estimates(self, limit=200, organization_id=None):

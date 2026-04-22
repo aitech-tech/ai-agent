@@ -50,8 +50,14 @@ def _load_connector_tools(selected: list[str]) -> list[dict]:
     for name in selected:
         if name == "zoho_books":
             from connectors.zoho_books.tools import ZOHO_BOOKS_TOOLS
+            from products.script_loader import load_product_tools
+            product_tools = load_product_tools("zoho_books")
             connector_tools.extend(ZOHO_BOOKS_TOOLS)
-            logger.info("Loaded tools: zoho_books (%d tools)", len(ZOHO_BOOKS_TOOLS))
+            connector_tools.extend(product_tools)
+            logger.info(
+                "Loaded tools: zoho_books (%d raw tools, %d report scripts)",
+                len(ZOHO_BOOKS_TOOLS), len(product_tools),
+            )
         else:
             logger.warning("Connector '%s' selected but not available in this build — skipping", name)
     return connector_tools

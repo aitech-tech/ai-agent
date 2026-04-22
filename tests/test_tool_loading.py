@@ -158,6 +158,28 @@ def test_zoho_mcp_not_imported():
     print("PASS: test_zoho_mcp_not_imported")
 
 
+def test_load_connector_tools_returns_56():
+    """_load_connector_tools(['zoho_books']) must return 56 tools: 51 raw + 5 report scripts.
+
+    Replicates main._load_connector_tools without importing main (main replaces
+    sys.stdout at module level which would swallow earlier test output).
+    """
+    from connectors.zoho_books.tools import ZOHO_BOOKS_TOOLS
+    from products.script_loader import load_product_tools
+
+    tools = list(ZOHO_BOOKS_TOOLS) + load_product_tools("zoho_books")
+
+    assert len(tools) == 56, f"Expected 56 tools, got {len(tools)}"
+    zb_raw = [t for t in tools if t["name"].startswith("zoho_books_")]
+    zb_report = [t for t in tools if t["name"].startswith("zb_")]
+    assert len(zb_raw) == 51, f"Expected 51 zoho_books_ tools, got {len(zb_raw)}"
+    assert len(zb_report) == 5, f"Expected 5 zb_ tools, got {len(zb_report)}"
+    print(
+        f"PASS: test_load_connector_tools_returns_56 "
+        f"({len(zb_raw)} raw, {len(zb_report)} report scripts)"
+    )
+
+
 if __name__ == "__main__":
     test_all_51_zoho_books_tools_present()
     test_no_crm_tools_loaded()
@@ -166,4 +188,5 @@ if __name__ == "__main__":
     test_create_tools_have_required_fields()
     test_tools_list_from_main_contains_only_books()
     test_zoho_mcp_not_imported()
+    test_load_connector_tools_returns_56()
     print("\nAll tool loading tests passed.")

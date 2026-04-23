@@ -21,8 +21,18 @@ The 40 `zb_*` report scripts are not directly exposed. Use these router tools in
 | Any reporting/analysis query | `recklabs_zoho_assistant` — pass the user's question as `query` |
 | Run a specific report by name | `recklabs_zoho_report` — pass `report` name |
 | Discover available reports | `recklabs_zoho_capabilities` |
+| List records, fetch records, write operations | `recklabs_zoho_action` — pass `intent` |
 | Authentication | `zoho_books_authenticate` |
-| Write operations | `zoho_books_create_*`, `zoho_books_update_*`, `zoho_books_delete_*` |
+
+#### recklabs_zoho_action intents
+
+List: `list_invoices`, `list_expenses`, `list_contacts`, `list_estimates`, `list_sales_orders`, `list_purchase_orders`, `list_customer_payments`, `list_bills`, `list_items`, `list_taxes`
+
+Get: `get_invoice`, `get_contact`, `get_expense`, `get_estimate`, `get_sales_order`, `get_purchase_order`, `get_customer_payment`
+
+Write: `create_invoice`, `update_invoice`, `delete_invoice`, `create_contact`, `update_contact`, `delete_contact`, `create_expense`, `update_expense`, `delete_expense`, `create_estimate`, `update_estimate`, `delete_estimate`, `create_sales_order`, `update_sales_order`, `delete_sales_order`, `create_purchase_order`, `update_purchase_order`, `delete_purchase_order`, `create_item`, `update_item`, `delete_item`, `create_tax`, `update_tax`, `delete_tax`, `create_customer_payment`, `update_customer_payment`, `delete_customer_payment`
+
+Special: `find_customer_activity`
 
 ### Developer Mode (`RECKLABS_TOOL_MODE=developer`)
 All 40 `zb_*` scripts are exposed directly. Use the tool selection guide below.

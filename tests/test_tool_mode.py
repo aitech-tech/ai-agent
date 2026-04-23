@@ -11,7 +11,10 @@ from tools.zoho_router_tools import (
     _classify_query,
     _match_report,
     _resolve_alias,
+    _match_action_intent,
+    _compact_records,
     recklabs_zoho_capabilities,
+    recklabs_zoho_action,
     ROUTER_TOOLS,
     _ALIASES,
 )
@@ -21,8 +24,8 @@ from tools.zoho_router_tools import (
 # CUSTOMER_MODE_RAW_TOOL_NAMES sanity checks
 # ---------------------------------------------------------------------------
 
-def test_customer_mode_has_37_names():
-    assert len(CUSTOMER_MODE_RAW_TOOL_NAMES) == 37
+def test_customer_mode_has_43_names():
+    assert len(CUSTOMER_MODE_RAW_TOOL_NAMES) == 43
 
 
 def test_customer_mode_includes_auth_tools():
@@ -44,7 +47,6 @@ def test_customer_mode_excludes_heavy_list_tools():
     assert "zoho_books_list_invoices" not in CUSTOMER_MODE_RAW_TOOL_NAMES
     assert "zoho_books_list_expenses" not in CUSTOMER_MODE_RAW_TOOL_NAMES
     assert "zoho_books_list_customer_payments" not in CUSTOMER_MODE_RAW_TOOL_NAMES
-    assert "zoho_books_get_invoice" not in CUSTOMER_MODE_RAW_TOOL_NAMES
 
 
 def test_customer_mode_exposes_safe_lookup_tools():
@@ -54,6 +56,12 @@ def test_customer_mode_exposes_safe_lookup_tools():
     assert "zoho_books_get_item" in CUSTOMER_MODE_RAW_TOOL_NAMES
     assert "zoho_books_list_taxes" in CUSTOMER_MODE_RAW_TOOL_NAMES
     assert "zoho_books_get_tax" in CUSTOMER_MODE_RAW_TOOL_NAMES
+    assert "zoho_books_get_invoice" in CUSTOMER_MODE_RAW_TOOL_NAMES
+    assert "zoho_books_get_estimate" in CUSTOMER_MODE_RAW_TOOL_NAMES
+    assert "zoho_books_get_sales_order" in CUSTOMER_MODE_RAW_TOOL_NAMES
+    assert "zoho_books_get_purchase_order" in CUSTOMER_MODE_RAW_TOOL_NAMES
+    assert "zoho_books_get_expense" in CUSTOMER_MODE_RAW_TOOL_NAMES
+    assert "zoho_books_get_customer_payment" in CUSTOMER_MODE_RAW_TOOL_NAMES
 
 
 # ---------------------------------------------------------------------------
@@ -94,13 +102,13 @@ def test_filter_customer_mode_small_count():
     # Build a realistic full set: 51 raw + 40 scripts
     # Extra raw tools that are NOT in CUSTOMER_MODE_RAW_TOOL_NAMES
     raw_names = list(CUSTOMER_MODE_RAW_TOOL_NAMES) + [
-        "zoho_books_list_invoices", "zoho_books_get_invoice",
-        "zoho_books_list_expenses", "zoho_books_get_expense",
+        "zoho_books_list_invoices", "zoho_books_list_expenses",
+        "zoho_books_list_estimates", "zoho_books_list_sales_orders",
     ]
     script_names = [f"zb_script_{i}" for i in range(40)]
     all_tools = _make_tools(raw_names + script_names)
     result = filter_connector_tools(all_tools, mode="customer")
-    assert len(result) == 37
+    assert len(result) == 43
 
 
 def test_dedupe_tools_keeps_last_definition():
@@ -242,13 +250,18 @@ def test_resolve_alias_unknown():
 # ROUTER_TOOLS structure
 # ---------------------------------------------------------------------------
 
-def test_router_tools_has_three():
-    assert len(ROUTER_TOOLS) == 3
+def test_router_tools_has_four():
+    assert len(ROUTER_TOOLS) == 4
 
 
 def test_router_tool_names():
     names = {t["name"] for t in ROUTER_TOOLS}
-    assert names == {"recklabs_zoho_assistant", "recklabs_zoho_report", "recklabs_zoho_capabilities"}
+    assert names == {
+        "recklabs_zoho_assistant",
+        "recklabs_zoho_report",
+        "recklabs_zoho_capabilities",
+        "recklabs_zoho_action",
+    }
 
 
 def test_router_tools_all_have_fn():
@@ -311,8 +324,8 @@ def test_assistant_write_guidance():
     from tools.zoho_router_tools import recklabs_zoho_assistant
     result = recklabs_zoho_assistant({"query": "create a new invoice"})
     assert result["success"] is False
-    assert result["error"] == "use_raw_tool"
-    assert "create" in result["guidance"].lower()
+    # Routes to recklabs_zoho_action → missing_parameters (no customer_id/line_items)
+    assert result["error"] in ("missing_parameters", "use_raw_tool")
 
 
 def test_assistant_unknown_query():
@@ -349,34 +362,164 @@ def test_zoho_report_valid_name_hits_auth():
 
 
 # ---------------------------------------------------------------------------
-# Write intent — safe workflow guidance
+# Write intent — safe workflow guidance (via recklabs_zoho_action)
 # ---------------------------------------------------------------------------
 
 def test_write_intent_guidance_mentions_lookup():
-    from tools.zoho_router_tools import recklabs_zoho_assistant
-    result = recklabs_zoho_assistant({"query": "create a new invoice"})
-    assert result["error"] == "use_raw_tool"
-    assert "lookup" in result["guidance"].lower() or "list_contacts" in result["guidance"].lower()
+    result = recklabs_zoho_action({"intent": "create_invoice", "params": {}})
+    assert result["error"] == "missing_parameters"
+    safe = result.get("safe_next_step", "")
+    assert "list_contacts" in safe or "lookup" in safe.lower()
 
 
 def test_write_intent_guidance_mentions_confirm():
-    from tools.zoho_router_tools import recklabs_zoho_assistant
-    result = recklabs_zoho_assistant({"query": "delete the contact"})
-    assert result["error"] == "use_raw_tool"
-    assert "confirm" in result["guidance"].lower()
+    result = recklabs_zoho_action({"intent": "delete_invoice", "params": {"invoice_id": "INV-001"}})
+    assert result["error"] == "confirmation_required"
+    assert "confirm" in result["message"].lower() or "delete" in result["message"].lower()
 
 
 def test_write_intent_guidance_mentions_never_guess():
-    from tools.zoho_router_tools import recklabs_zoho_assistant
-    result = recklabs_zoho_assistant({"query": "update the expense record"})
-    assert result["error"] == "use_raw_tool"
-    assert "never" in result["guidance"].lower()
+    result = recklabs_zoho_action({"intent": "create_invoice", "params": {}})
+    assert result["error"] == "missing_parameters"
+    safe = result.get("safe_next_step", "")
+    assert "never" in safe.lower() or "guess" in safe.lower()
 
 
 def test_write_intent_guidance_has_workflow_key():
-    from tools.zoho_router_tools import recklabs_zoho_assistant
-    result = recklabs_zoho_assistant({"query": "create a purchase order"})
-    assert result.get("workflow") == "lookup_first"
+    result = recklabs_zoho_action({"intent": "create_invoice", "params": {}})
+    assert result["error"] == "missing_parameters"
+    assert "missing" in result
+    assert "questions" in result
+
+
+# ---------------------------------------------------------------------------
+# recklabs_zoho_action — unit tests (no connector needed for most)
+# ---------------------------------------------------------------------------
+
+def test_action_tool_missing_intent():
+    result = recklabs_zoho_action({})
+    assert result["success"] is False
+    assert result["error"] == "missing_intent"
+
+
+def test_action_tool_unknown_intent():
+    result = recklabs_zoho_action({"intent": "do_the_hokey_pokey"})
+    assert result["success"] is False
+    assert result["error"] == "unknown_intent"
+
+
+def test_action_create_invoice_missing_params():
+    result = recklabs_zoho_action({"intent": "create_invoice", "params": {}})
+    assert result["success"] is False
+    assert result["error"] == "missing_parameters"
+    assert "customer_id" in result["missing"]
+    assert "line_items" in result["missing"]
+    assert len(result["questions"]) == 2
+
+
+def test_action_create_invoice_requires_confirmation():
+    result = recklabs_zoho_action({
+        "intent": "create_invoice",
+        "params": {"customer_id": "cust_123", "line_items": [{"rate": 1000, "quantity": 1}]},
+    })
+    assert result["success"] is False
+    assert result["error"] == "confirmation_required"
+    assert result["intent"] == "create_invoice"
+    assert "draft" in result
+
+
+def test_action_delete_invoice_requires_confirmation():
+    result = recklabs_zoho_action({"intent": "delete_invoice", "params": {"invoice_id": "INV-001"}})
+    assert result["success"] is False
+    assert result["error"] == "confirmation_required"
+    assert "cannot be undone" in result["message"].lower()
+
+
+def test_action_confirmed_delete_hits_auth():
+    result = recklabs_zoho_action({
+        "intent": "delete_invoice",
+        "params": {"invoice_id": "INV-001"},
+        "confirmed": True,
+    })
+    assert result["success"] is False
+    assert result.get("error") in (
+        "authentication_required", "connector_error",
+        "tool_failed", "unexpected_error", "unknown_tool",
+    )
+
+
+def test_action_list_invoices_hits_auth():
+    result = recklabs_zoho_action({"intent": "list_invoices"})
+    assert result["success"] is False
+    assert result.get("error") in (
+        "authentication_required", "connector_error",
+        "tool_failed", "fetch_failed", "unknown_tool",
+    )
+
+
+def test_action_list_expenses_hits_auth():
+    result = recklabs_zoho_action({"intent": "list_expenses"})
+    assert result["success"] is False
+    assert result.get("error") in (
+        "authentication_required", "connector_error",
+        "tool_failed", "fetch_failed", "unknown_tool",
+    )
+
+
+def test_action_find_customer_activity_missing_name():
+    result = recklabs_zoho_action({"intent": "find_customer_activity", "params": {}})
+    assert result["success"] is False
+    assert result["error"] == "missing_parameters"
+    assert "customer_name" in result["missing"]
+
+
+def test_compact_records_limits_and_strips_fields():
+    records = [
+        {"invoice_id": "1", "invoice_number": "INV-001", "customer_name": "Acme",
+         "total": 1000, "extra_field": "should_be_removed"},
+        {"invoice_id": "2", "invoice_number": "INV-002", "customer_name": "Beta", "total": 2000},
+    ]
+    result = _compact_records(records, "invoices", limit=1)
+    assert len(result) == 1
+    assert "extra_field" not in result[0]
+    assert "invoice_id" in result[0]
+    assert result[0]["invoice_number"] == "INV-001"
+
+
+def test_compact_records_unknown_entity_returns_full():
+    records = [{"foo": "bar", "baz": "qux"}]
+    result = _compact_records(records, "unknown_entity", limit=10)
+    assert result == records
+
+
+def test_match_action_intent_create_invoice():
+    assert _match_action_intent("create a new invoice for Acme") == "create_invoice"
+
+
+def test_match_action_intent_delete_contact():
+    assert _match_action_intent("I want to delete the contact") == "delete_contact"
+
+
+def test_match_action_intent_list_invoices():
+    assert _match_action_intent("please list all invoices") == "list_invoices"
+
+
+def test_match_action_intent_no_match():
+    assert _match_action_intent("tell me a joke") is None
+
+
+def test_customer_mode_action_tool_in_router():
+    names = {t["name"] for t in ROUTER_TOOLS}
+    assert "recklabs_zoho_action" in names
+
+
+def test_action_tool_has_mcp_schema():
+    action_tool = next(t for t in ROUTER_TOOLS if t["name"] == "recklabs_zoho_action")
+    schema = action_tool["input_schema"]
+    assert schema["type"] == "object"
+    assert "intent" in schema["properties"]
+    assert "intent" in schema["required"]
+    assert callable(action_tool["fn"])
 
 
 # ---------------------------------------------------------------------------
@@ -434,8 +577,8 @@ def test_customer_mode_hides_list_invoices_and_expenses():
     names = {t["name"] for t in result}
     assert "zoho_books_list_invoices" not in names
     assert "zoho_books_list_expenses" not in names
-    assert "zoho_books_get_invoice" not in names
-    assert len(result) == 37
+    assert "zoho_books_get_invoice" in names
+    assert len(result) == 43
 
 
 # ---------------------------------------------------------------------------
@@ -454,7 +597,7 @@ def test_aliases_cover_all_40_scripts():
 
 
 if __name__ == "__main__":
-    test_customer_mode_has_37_names()
+    test_customer_mode_has_43_names()
     test_customer_mode_includes_auth_tools()
     test_customer_mode_includes_cud_tools()
     test_customer_mode_excludes_heavy_list_tools()
@@ -486,7 +629,7 @@ if __name__ == "__main__":
     test_resolve_alias_plain_name()
     test_resolve_alias_phrase()
     test_resolve_alias_unknown()
-    test_router_tools_has_three()
+    test_router_tools_has_four()
     test_router_tool_names()
     test_router_tools_all_have_fn()
     test_router_tools_all_have_mcp_input_schema()
@@ -504,6 +647,23 @@ if __name__ == "__main__":
     test_write_intent_guidance_mentions_confirm()
     test_write_intent_guidance_mentions_never_guess()
     test_write_intent_guidance_has_workflow_key()
+    test_action_tool_missing_intent()
+    test_action_tool_unknown_intent()
+    test_action_create_invoice_missing_params()
+    test_action_create_invoice_requires_confirmation()
+    test_action_delete_invoice_requires_confirmation()
+    test_action_confirmed_delete_hits_auth()
+    test_action_list_invoices_hits_auth()
+    test_action_list_expenses_hits_auth()
+    test_action_find_customer_activity_missing_name()
+    test_compact_records_limits_and_strips_fields()
+    test_compact_records_unknown_entity_returns_full()
+    test_match_action_intent_create_invoice()
+    test_match_action_intent_delete_contact()
+    test_match_action_intent_list_invoices()
+    test_match_action_intent_no_match()
+    test_customer_mode_action_tool_in_router()
+    test_action_tool_has_mcp_schema()
     test_cud_descriptions_contain_never_guess()
     test_cud_tool_count_is_27()
     test_developer_mode_exposes_all_raw_tools()

@@ -14,7 +14,8 @@ Report tools (Python scripts running locally) do all data fetching, filtering, a
 - **Primary tool in customer mode**: Use `recklabs_zoho_assistant` for all reporting and analysis questions. Pass the user's query directly.
 - **Direct reports**: Use `recklabs_zoho_report` when you know the exact report name.
 - **Discovery**: Use `recklabs_zoho_capabilities` to see what reports are available.
-- **Write operations** (create/update/delete): Follow the strict safe write workflow below.
+- **Operational actions** (list records, fetch records, create/update/delete): Use `recklabs_zoho_action` with the appropriate `intent`.
+- **Write operations**: Follow the strict safe write workflow below. Use `recklabs_zoho_action` — not raw tools directly.
 - **Authentication**: Use `zoho_books_authenticate` to connect to Zoho Books.
 
 ## Reporting Workflow
@@ -34,11 +35,35 @@ Report tools (Python scripts running locally) do all data fetching, filtering, a
 
 ## What NOT to Do for Reporting
 
-- Do not call `zoho_books_list_*` or `zoho_books_get_*` for reporting.
+- Do not call `zoho_books_list_*` or `zoho_books_get_*` for reporting — use the report tools.
 - Do not recalculate totals the tool already computed.
 - Do not call the same report tool twice to cross-check.
 - Do not ask the user for data that a tool can fetch.
 - Do not make up figures if a tool call fails — report the error clearly.
+
+## Using recklabs_zoho_action
+
+For listing records, fetching a single record, or write operations, use `recklabs_zoho_action`:
+
+| Task | Intent |
+|------|--------|
+| List invoices | `list_invoices` |
+| List expenses | `list_expenses` |
+| List contacts | `list_contacts` |
+| Get a specific invoice | `get_invoice` |
+| Get a specific contact | `get_contact` |
+| Create invoice | `create_invoice` |
+| Update contact | `update_contact` |
+| Delete expense | `delete_expense` |
+| Customer history | `find_customer_activity` |
+
+### Write flow (3 steps)
+
+1. Call with `intent` + `params` (missing required params → tool returns `questions` to ask user)
+2. Call again with all params filled (no `confirmed`) → tool returns `draft` for user review
+3. Call with `confirmed: true` → executes the action
+
+**Never skip step 2.** Always show the draft to the user and wait for explicit confirmation.
 
 ## Safe Write Workflow
 

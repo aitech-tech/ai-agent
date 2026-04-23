@@ -47,6 +47,66 @@ SKILLS_UPDATE_URL = os.getenv(
 
 RECKLABS_LICENSE_API_URL = os.getenv("RECKLABS_LICENSE_API_URL", "")
 
+# Tool exposure mode: "customer" (default) or "developer"
+# customer: exposes router tools + auth/org + CUD raw tools (~49 total including platform tools)
+# developer: exposes all 91 tools (51 raw + 40 report scripts)
+RECKLABS_TOOL_MODE = os.getenv("RECKLABS_TOOL_MODE", "customer").lower().strip()
+
+# Raw tool names exposed in customer mode: auth/org (4) + CUD per entity (27)
+CUSTOMER_MODE_RAW_TOOL_NAMES: frozenset = frozenset({
+    # Auth & Org
+    "zoho_books_authenticate",
+    "zoho_books_connection_status",
+    "zoho_books_list_organizations",
+    "zoho_books_get_organization",
+    # Contacts
+    "zoho_books_create_contact",
+    "zoho_books_update_contact",
+    "zoho_books_delete_contact",
+    # Invoices
+    "zoho_books_create_invoice",
+    "zoho_books_update_invoice",
+    "zoho_books_delete_invoice",
+    # Estimates
+    "zoho_books_create_estimate",
+    "zoho_books_update_estimate",
+    "zoho_books_delete_estimate",
+    # Sales Orders
+    "zoho_books_create_sales_order",
+    "zoho_books_update_sales_order",
+    "zoho_books_delete_sales_order",
+    # Purchase Orders
+    "zoho_books_create_purchase_order",
+    "zoho_books_update_purchase_order",
+    "zoho_books_delete_purchase_order",
+    # Expenses
+    "zoho_books_create_expense",
+    "zoho_books_update_expense",
+    "zoho_books_delete_expense",
+    # Items
+    "zoho_books_create_item",
+    "zoho_books_update_item",
+    "zoho_books_delete_item",
+    # Taxes
+    "zoho_books_create_tax",
+    "zoho_books_update_tax",
+    "zoho_books_delete_tax",
+    # Customer Payments
+    "zoho_books_create_customer_payment",
+    "zoho_books_update_customer_payment",
+    "zoho_books_delete_customer_payment",
+})
+
+
+def filter_connector_tools(tools: list, mode: str = RECKLABS_TOOL_MODE) -> list:
+    """Return tools filtered by mode.
+    developer: all tools unchanged.
+    customer: only CUSTOMER_MODE_RAW_TOOL_NAMES (no list/get/report tools).
+    """
+    if mode != "customer":
+        return tools
+    return [t for t in tools if t["name"] in CUSTOMER_MODE_RAW_TOOL_NAMES]
+
 
 def load_connector_config_v2() -> dict:
     """Load v1.2.0 connector config."""

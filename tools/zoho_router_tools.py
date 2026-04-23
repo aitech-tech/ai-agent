@@ -22,7 +22,11 @@ logger = logging.getLogger(__name__)
 
 _ALIASES: dict[str, list[str]] = {
     # AR / Receivables
-    "ar_aging":               ["ar aging", "receivables aging", "accounts receivable aging", "ar buckets"],
+    "ar_aging":               [
+        "ar aging", "receivables aging", "accounts receivable aging", "ar buckets",
+        "receivables", "receivable", "accounts receivable", "money owed to me",
+        "who owes me money", "who owes us money",
+    ],
     "overdue_invoices":       ["overdue invoices", "overdue invoice", "past due invoices"],
     "outstanding_invoices":   ["outstanding invoices", "unpaid invoices", "sent invoices"],
     "draft_invoices":         ["draft invoices", "draft invoice"],
@@ -204,10 +208,19 @@ def recklabs_zoho_assistant(params: dict) -> dict:
         return {
             "success": False,
             "error": "use_raw_tool",
+            "workflow": "lookup_first",
             "guidance": (
-                "Write operations (create/update/delete) require a specific raw tool. "
-                "Use zoho_books_create_*, zoho_books_update_*, or zoho_books_delete_* "
-                "with the appropriate entity name (contact, invoice, expense, item, etc.)."
+                "Write operations require a safe lookup-first workflow. "
+                "Never guess IDs or accounting fields. "
+                "Follow these steps:\n"
+                "1. Lookup: use zoho_books_list_contacts / zoho_books_list_items / "
+                "zoho_books_list_taxes to find the exact IDs needed.\n"
+                "2. Resolve: ask the user for any missing or ambiguous fields "
+                "(dates, tax rate, payment mode, currency, GST details).\n"
+                "3. Draft: show a short summary of the proposed action.\n"
+                "4. Confirm: ask the user to confirm before executing.\n"
+                "5. Execute: call zoho_books_create_* / zoho_books_update_* / zoho_books_delete_*.\n"
+                "Never reuse an ID from a previous turn without looking it up again."
             ),
         }
 

@@ -52,14 +52,22 @@ RECKLABS_LICENSE_API_URL = os.getenv("RECKLABS_LICENSE_API_URL", "")
 # developer: exposes all 91 tools (51 raw + 40 report scripts)
 RECKLABS_TOOL_MODE = os.getenv("RECKLABS_TOOL_MODE", "customer").lower().strip()
 
-# Raw tool names exposed in customer mode: auth/org (4) + CUD per entity (27)
+# Raw tool names exposed in customer mode:
+#   Auth/org (4) + safe lookup tools (6) + CUD per entity (27) = 37 total
 CUSTOMER_MODE_RAW_TOOL_NAMES: frozenset = frozenset({
     # Auth & Org
     "zoho_books_authenticate",
     "zoho_books_connection_status",
     "zoho_books_list_organizations",
     "zoho_books_get_organization",
-    # Contacts
+    # Safe lookup tools (needed to prepare write workflows without guessing IDs)
+    "zoho_books_list_contacts",
+    "zoho_books_get_contact",
+    "zoho_books_list_items",
+    "zoho_books_get_item",
+    "zoho_books_list_taxes",
+    "zoho_books_get_tax",
+    # Contacts CUD
     "zoho_books_create_contact",
     "zoho_books_update_contact",
     "zoho_books_delete_contact",
@@ -101,7 +109,7 @@ CUSTOMER_MODE_RAW_TOOL_NAMES: frozenset = frozenset({
 def filter_connector_tools(tools: list, mode: str = RECKLABS_TOOL_MODE) -> list:
     """Return tools filtered by mode.
     developer: all tools unchanged.
-    customer: only CUSTOMER_MODE_RAW_TOOL_NAMES (no list/get/report tools).
+    customer: only CUSTOMER_MODE_RAW_TOOL_NAMES (safe lookup + auth/org + CUD; no heavy list/report tools).
     """
     if mode != "customer":
         return tools

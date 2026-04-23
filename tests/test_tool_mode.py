@@ -21,8 +21,8 @@ from tools.zoho_router_tools import (
 # CUSTOMER_MODE_RAW_TOOL_NAMES sanity checks
 # ---------------------------------------------------------------------------
 
-def test_customer_mode_has_31_names():
-    assert len(CUSTOMER_MODE_RAW_TOOL_NAMES) == 31
+def test_customer_mode_has_37_names():
+    assert len(CUSTOMER_MODE_RAW_TOOL_NAMES) == 37
 
 
 def test_customer_mode_includes_auth_tools():
@@ -39,10 +39,21 @@ def test_customer_mode_includes_cud_tools():
     assert "zoho_books_delete_invoice" in CUSTOMER_MODE_RAW_TOOL_NAMES
 
 
-def test_customer_mode_excludes_list_tools():
+def test_customer_mode_excludes_heavy_list_tools():
+    # Heavy list tools (no safe-lookup counterpart) stay hidden
     assert "zoho_books_list_invoices" not in CUSTOMER_MODE_RAW_TOOL_NAMES
-    assert "zoho_books_list_contacts" not in CUSTOMER_MODE_RAW_TOOL_NAMES
+    assert "zoho_books_list_expenses" not in CUSTOMER_MODE_RAW_TOOL_NAMES
+    assert "zoho_books_list_customer_payments" not in CUSTOMER_MODE_RAW_TOOL_NAMES
     assert "zoho_books_get_invoice" not in CUSTOMER_MODE_RAW_TOOL_NAMES
+
+
+def test_customer_mode_exposes_safe_lookup_tools():
+    assert "zoho_books_list_contacts" in CUSTOMER_MODE_RAW_TOOL_NAMES
+    assert "zoho_books_get_contact" in CUSTOMER_MODE_RAW_TOOL_NAMES
+    assert "zoho_books_list_items" in CUSTOMER_MODE_RAW_TOOL_NAMES
+    assert "zoho_books_get_item" in CUSTOMER_MODE_RAW_TOOL_NAMES
+    assert "zoho_books_list_taxes" in CUSTOMER_MODE_RAW_TOOL_NAMES
+    assert "zoho_books_get_tax" in CUSTOMER_MODE_RAW_TOOL_NAMES
 
 
 # ---------------------------------------------------------------------------
@@ -81,14 +92,15 @@ def test_filter_customer_mode_excludes_report_scripts():
 
 def test_filter_customer_mode_small_count():
     # Build a realistic full set: 51 raw + 40 scripts
+    # Extra raw tools that are NOT in CUSTOMER_MODE_RAW_TOOL_NAMES
     raw_names = list(CUSTOMER_MODE_RAW_TOOL_NAMES) + [
         "zoho_books_list_invoices", "zoho_books_get_invoice",
-        "zoho_books_list_contacts", "zoho_books_get_contact",
+        "zoho_books_list_expenses", "zoho_books_get_expense",
     ]
     script_names = [f"zb_script_{i}" for i in range(40)]
     all_tools = _make_tools(raw_names + script_names)
     result = filter_connector_tools(all_tools, mode="customer")
-    assert len(result) == 31
+    assert len(result) == 37
 
 
 def test_dedupe_tools_keeps_last_definition():
@@ -110,6 +122,18 @@ def test_dedupe_tools_keeps_last_definition():
 
 def test_classify_ar_aging():
     intent, script = _classify_query("Show me AR aging")
+    assert intent == "report"
+    assert script == "ar_aging"
+
+
+def test_classify_plain_receivables():
+    intent, script = _classify_query("Show me receivables this month")
+    assert intent == "report"
+    assert script == "ar_aging"
+
+
+def test_classify_who_owes_me_money():
+    intent, script = _classify_query("Who owes me money?")
     assert intent == "report"
     assert script == "ar_aging"
 
@@ -325,6 +349,96 @@ def test_zoho_report_valid_name_hits_auth():
 
 
 # ---------------------------------------------------------------------------
+# Write intent — safe workflow guidance
+# ---------------------------------------------------------------------------
+
+def test_write_intent_guidance_mentions_lookup():
+    from tools.zoho_router_tools import recklabs_zoho_assistant
+    result = recklabs_zoho_assistant({"query": "create a new invoice"})
+    assert result["error"] == "use_raw_tool"
+    assert "lookup" in result["guidance"].lower() or "list_contacts" in result["guidance"].lower()
+
+
+def test_write_intent_guidance_mentions_confirm():
+    from tools.zoho_router_tools import recklabs_zoho_assistant
+    result = recklabs_zoho_assistant({"query": "delete the contact"})
+    assert result["error"] == "use_raw_tool"
+    assert "confirm" in result["guidance"].lower()
+
+
+def test_write_intent_guidance_mentions_never_guess():
+    from tools.zoho_router_tools import recklabs_zoho_assistant
+    result = recklabs_zoho_assistant({"query": "update the expense record"})
+    assert result["error"] == "use_raw_tool"
+    assert "never" in result["guidance"].lower()
+
+
+def test_write_intent_guidance_has_workflow_key():
+    from tools.zoho_router_tools import recklabs_zoho_assistant
+    result = recklabs_zoho_assistant({"query": "create a purchase order"})
+    assert result.get("workflow") == "lookup_first"
+
+
+# ---------------------------------------------------------------------------
+# create/update/delete tool descriptions contain "Never guess"
+# ---------------------------------------------------------------------------
+
+def test_cud_descriptions_contain_never_guess():
+    from connectors.zoho_books.tools import ZOHO_BOOKS_TOOLS
+    cud_tools = [
+        t for t in ZOHO_BOOKS_TOOLS
+        if any(t["name"].startswith(f"zoho_books_{verb}_") for verb in ("create", "update", "delete"))
+    ]
+    missing = [t["name"] for t in cud_tools if "Never guess" not in t["description"]]
+    assert not missing, f"CUD tools missing 'Never guess' in description: {missing}"
+
+
+def test_cud_tool_count_is_27():
+    from connectors.zoho_books.tools import ZOHO_BOOKS_TOOLS
+    cud_tools = [
+        t for t in ZOHO_BOOKS_TOOLS
+        if any(t["name"].startswith(f"zoho_books_{verb}_") for verb in ("create", "update", "delete"))
+    ]
+    assert len(cud_tools) == 27
+
+
+# ---------------------------------------------------------------------------
+# Developer mode exposes all raw tools and all zb_* scripts
+# ---------------------------------------------------------------------------
+
+def test_developer_mode_exposes_all_raw_tools():
+    from connectors.zoho_books.tools import ZOHO_BOOKS_TOOLS
+    tools = [{"name": t["name"], "fn": t["fn"], "description": t["description"], "params": {}} for t in ZOHO_BOOKS_TOOLS]
+    result = filter_connector_tools(tools, mode="developer")
+    assert len(result) == 51
+
+
+def test_developer_mode_exposes_all_zb_scripts():
+    from products.script_loader import load_product_tools
+    scripts = load_product_tools("zoho_books")
+    result = filter_connector_tools(scripts, mode="developer")
+    assert len(result) == 40
+
+
+def test_customer_mode_hides_zb_scripts():
+    from products.script_loader import load_product_tools
+    scripts = load_product_tools("zoho_books")
+    result = filter_connector_tools(scripts, mode="customer")
+    assert len(result) == 0
+
+
+def test_customer_mode_hides_list_invoices_and_expenses():
+    from connectors.zoho_books.tools import ZOHO_BOOKS_TOOLS
+    tools = [{"name": t["name"], "fn": t["fn"], "description": t["description"], "params": {}} for t in ZOHO_BOOKS_TOOLS]
+    result = filter_connector_tools(tools, mode="customer")
+    names = {t["name"] for t in result}
+    assert "zoho_books_list_invoices" not in names
+    assert "zoho_books_list_expenses" not in names
+    assert "zoho_books_get_invoice" not in names
+    assert len(result) == 37
+
+
+# ---------------------------------------------------------------------------
 # _ALIASES coverage — all 40 scripts present
 # ---------------------------------------------------------------------------
 
@@ -340,16 +454,19 @@ def test_aliases_cover_all_40_scripts():
 
 
 if __name__ == "__main__":
-    test_customer_mode_has_31_names()
+    test_customer_mode_has_37_names()
     test_customer_mode_includes_auth_tools()
     test_customer_mode_includes_cud_tools()
-    test_customer_mode_excludes_list_tools()
+    test_customer_mode_excludes_heavy_list_tools()
+    test_customer_mode_exposes_safe_lookup_tools()
     test_filter_developer_mode_returns_all()
     test_filter_customer_mode_keeps_cud_only()
     test_filter_customer_mode_excludes_report_scripts()
     test_filter_customer_mode_small_count()
     test_dedupe_tools_keeps_last_definition()
     test_classify_ar_aging()
+    test_classify_plain_receivables()
+    test_classify_who_owes_me_money()
     test_classify_profit_loss()
     test_classify_cash_position()
     test_classify_overdue_invoices()
@@ -383,5 +500,15 @@ if __name__ == "__main__":
     test_zoho_report_missing_report_param()
     test_zoho_report_unknown_name()
     test_zoho_report_valid_name_hits_auth()
+    test_write_intent_guidance_mentions_lookup()
+    test_write_intent_guidance_mentions_confirm()
+    test_write_intent_guidance_mentions_never_guess()
+    test_write_intent_guidance_has_workflow_key()
+    test_cud_descriptions_contain_never_guess()
+    test_cud_tool_count_is_27()
+    test_developer_mode_exposes_all_raw_tools()
+    test_developer_mode_exposes_all_zb_scripts()
+    test_customer_mode_hides_zb_scripts()
+    test_customer_mode_hides_list_invoices_and_expenses()
     test_aliases_cover_all_40_scripts()
     print("\nAll tool mode tests passed.")

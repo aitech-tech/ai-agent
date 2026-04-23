@@ -649,7 +649,7 @@ ZOHO_BOOKS_TOOLS = [
     },
     {
         "name": "zoho_books_create_contact",
-        "description": "Create a contact (customer or vendor). Defaults: currency INR, gst_treatment business_gst.",
+        "description": "Create a contact. Never guess gst_no, currency, or place_of_contact — ask the user. Use zoho_books_list_contacts first to avoid duplicates. Show a draft summary and ask for confirmation before creating.",
         "input_schema": {
             "type": "object",
             "properties": {
@@ -669,7 +669,7 @@ ZOHO_BOOKS_TOOLS = [
     },
     {
         "name": "zoho_books_update_contact",
-        "description": "Update an existing contact. Pass any Zoho Books contact fields.",
+        "description": "Update a contact. Never guess contact_id — use zoho_books_list_contacts to find it first. Never reuse an ID from a prior turn without looking it up again. Show proposed changes and ask for confirmation before updating.",
         "input_schema": {
             "type": "object",
             "properties": {
@@ -687,7 +687,7 @@ ZOHO_BOOKS_TOOLS = [
     },
     {
         "name": "zoho_books_delete_contact",
-        "description": "Delete a contact by ID. This is irreversible.",
+        "description": "Delete a contact. Irreversible. Never guess contact_id — use zoho_books_list_contacts to confirm the record first. Show record details and ask for explicit confirmation before deleting.",
         "input_schema": {
             "type": "object",
             "properties": {
@@ -725,7 +725,7 @@ ZOHO_BOOKS_TOOLS = [
     },
     {
         "name": "zoho_books_create_invoice",
-        "description": "Create an invoice. Defaults: currency INR. Add tax_id in line_items for GST.",
+        "description": "Create an invoice. Never guess customer_id, item_id, or tax_id. Use zoho_books_list_contacts for customer_id, zoho_books_list_items for item IDs, zoho_books_list_taxes for tax_id. Ask for date, due date, and line items explicitly. Show a draft summary and ask for confirmation before creating.",
         "input_schema": {
             "type": "object",
             "properties": {
@@ -744,7 +744,7 @@ ZOHO_BOOKS_TOOLS = [
     },
     {
         "name": "zoho_books_update_invoice",
-        "description": "Update an existing invoice. Pass any Zoho Books invoice fields.",
+        "description": "Update an invoice. Never guess invoice_id, item_id, or tax_id — look them up first. Never reuse IDs from a prior turn without verifying. Show proposed changes and ask for confirmation before updating.",
         "input_schema": {
             "type": "object",
             "properties": {
@@ -760,7 +760,7 @@ ZOHO_BOOKS_TOOLS = [
     },
     {
         "name": "zoho_books_delete_invoice",
-        "description": "Delete an invoice by ID. This is irreversible.",
+        "description": "Delete an invoice. Irreversible. Never guess invoice_id — use zoho_books_get_invoice or zoho_books_list_invoices to confirm the record first. Show invoice details and ask for explicit confirmation before deleting.",
         "input_schema": {
             "type": "object",
             "properties": {"invoice_id": {"type": "string"}, **_ORG_PROP},
@@ -795,7 +795,7 @@ ZOHO_BOOKS_TOOLS = [
     },
     {
         "name": "zoho_books_create_estimate",
-        "description": "Create an estimate (quote). Defaults: currency INR.",
+        "description": "Create an estimate (quote). Never guess customer_id, item_id, or tax_id. Use zoho_books_list_contacts, zoho_books_list_items, and zoho_books_list_taxes to find IDs. Ask for dates and line items. Show a draft summary and ask for confirmation before creating.",
         "input_schema": {
             "type": "object",
             "properties": {
@@ -812,7 +812,7 @@ ZOHO_BOOKS_TOOLS = [
     },
     {
         "name": "zoho_books_update_estimate",
-        "description": "Update an existing estimate. Pass any Zoho Books estimate fields.",
+        "description": "Update an estimate. Never guess estimate_id, item_id, or tax_id — look them up first. Show proposed changes and ask for confirmation before updating.",
         "input_schema": {
             "type": "object",
             "properties": {
@@ -827,7 +827,7 @@ ZOHO_BOOKS_TOOLS = [
     },
     {
         "name": "zoho_books_delete_estimate",
-        "description": "Delete an estimate by ID.",
+        "description": "Delete an estimate. Never guess estimate_id — confirm the record with zoho_books_get_estimate first. Show details and ask for explicit confirmation before deleting.",
         "input_schema": {
             "type": "object",
             "properties": {"estimate_id": {"type": "string"}, **_ORG_PROP},
@@ -862,7 +862,7 @@ ZOHO_BOOKS_TOOLS = [
     },
     {
         "name": "zoho_books_create_sales_order",
-        "description": "Create a sales order in Zoho Books. Defaults: currency INR.",
+        "description": "Create a sales order. Never guess customer_id, item_id, or tax_id. Use zoho_books_list_contacts, zoho_books_list_items, and zoho_books_list_taxes to find IDs. Ask for dates and line items. Show a draft summary and ask for confirmation before creating.",
         "input_schema": {
             "type": "object",
             "properties": {
@@ -878,7 +878,7 @@ ZOHO_BOOKS_TOOLS = [
     },
     {
         "name": "zoho_books_update_sales_order",
-        "description": "Update an existing sales order. Pass any Zoho Books sales order fields.",
+        "description": "Update a sales order. Never guess salesorder_id, item_id, or tax_id — look them up first. Show proposed changes and ask for confirmation before updating.",
         "input_schema": {
             "type": "object",
             "properties": {
@@ -892,7 +892,7 @@ ZOHO_BOOKS_TOOLS = [
     },
     {
         "name": "zoho_books_delete_sales_order",
-        "description": "Delete a sales order by ID.",
+        "description": "Delete a sales order. Never guess salesorder_id — confirm the record first. Show details and ask for explicit confirmation before deleting.",
         "input_schema": {
             "type": "object",
             "properties": {"salesorder_id": {"type": "string"}, **_ORG_PROP},
@@ -927,7 +927,7 @@ ZOHO_BOOKS_TOOLS = [
     },
     {
         "name": "zoho_books_create_purchase_order",
-        "description": "Create a purchase order. Defaults: currency INR.",
+        "description": "Create a purchase order. Never guess vendor_id, item_id, or tax_id. Use zoho_books_list_contacts (vendor type) for vendor_id, zoho_books_list_items for item IDs, zoho_books_list_taxes for tax_id. Show a draft summary and ask for confirmation before creating.",
         "input_schema": {
             "type": "object",
             "properties": {
@@ -943,7 +943,7 @@ ZOHO_BOOKS_TOOLS = [
     },
     {
         "name": "zoho_books_update_purchase_order",
-        "description": "Update an existing purchase order. Pass any Zoho Books PO fields.",
+        "description": "Update a purchase order. Never guess purchaseorder_id, item_id, or tax_id — look them up first. Show proposed changes and ask for confirmation before updating.",
         "input_schema": {
             "type": "object",
             "properties": {
@@ -957,7 +957,7 @@ ZOHO_BOOKS_TOOLS = [
     },
     {
         "name": "zoho_books_delete_purchase_order",
-        "description": "Delete a purchase order by ID.",
+        "description": "Delete a purchase order. Never guess purchaseorder_id — confirm the record first. Show details and ask for explicit confirmation before deleting.",
         "input_schema": {
             "type": "object",
             "properties": {"purchaseorder_id": {"type": "string"}, **_ORG_PROP},
@@ -992,7 +992,7 @@ ZOHO_BOOKS_TOOLS = [
     },
     {
         "name": "zoho_books_create_expense",
-        "description": "Record an expense in Zoho Books. Defaults: currency INR.",
+        "description": "Record an expense. Never guess account_id or vendor_id — ask the user for the expense account and use zoho_books_list_contacts for vendor_id if needed. Ask for date, amount, and description explicitly. Show a draft summary and ask for confirmation before recording.",
         "input_schema": {
             "type": "object",
             "properties": {
@@ -1010,7 +1010,7 @@ ZOHO_BOOKS_TOOLS = [
     },
     {
         "name": "zoho_books_update_expense",
-        "description": "Update an existing expense. Pass any Zoho Books expense fields.",
+        "description": "Update an expense. Never guess expense_id or account_id — use zoho_books_get_expense to confirm the record first. Show proposed changes and ask for confirmation before updating.",
         "input_schema": {
             "type": "object",
             "properties": {
@@ -1025,7 +1025,7 @@ ZOHO_BOOKS_TOOLS = [
     },
     {
         "name": "zoho_books_delete_expense",
-        "description": "Delete an expense by ID.",
+        "description": "Delete an expense. Never guess expense_id — use zoho_books_get_expense to confirm the record first. Show details and ask for explicit confirmation before deleting.",
         "input_schema": {
             "type": "object",
             "properties": {"expense_id": {"type": "string"}, **_ORG_PROP},
@@ -1056,7 +1056,7 @@ ZOHO_BOOKS_TOOLS = [
     },
     {
         "name": "zoho_books_create_item",
-        "description": "Create an item (product/service). Defaults: currency INR. Add tax_id for GST.",
+        "description": "Create an item (product/service). Never guess tax_id — use zoho_books_list_taxes to find the correct GST rate. Ask for name, rate, and unit explicitly. Show a draft summary and ask for confirmation before creating.",
         "input_schema": {
             "type": "object",
             "properties": {
@@ -1075,7 +1075,7 @@ ZOHO_BOOKS_TOOLS = [
     },
     {
         "name": "zoho_books_update_item",
-        "description": "Update an existing item. Pass any Zoho Books item fields.",
+        "description": "Update an item. Never guess item_id or tax_id — use zoho_books_list_items and zoho_books_list_taxes first. Show proposed changes and ask for confirmation before updating.",
         "input_schema": {
             "type": "object",
             "properties": {
@@ -1092,7 +1092,7 @@ ZOHO_BOOKS_TOOLS = [
     },
     {
         "name": "zoho_books_delete_item",
-        "description": "Delete an item by ID.",
+        "description": "Delete an item. Never guess item_id — use zoho_books_list_items to confirm the record first. Show details and ask for explicit confirmation before deleting.",
         "input_schema": {
             "type": "object",
             "properties": {"item_id": {"type": "string"}, **_ORG_PROP},
@@ -1123,7 +1123,7 @@ ZOHO_BOOKS_TOOLS = [
     },
     {
         "name": "zoho_books_create_tax",
-        "description": "Create a tax. Default tax_percentage=18 (GST demo default — verify with accountant).",
+        "description": "Create a tax entry. Never guess the tax percentage — ask the user for the exact rate and confirm with their accountant. Ask for tax_name and tax_type. Show a draft and ask for confirmation before creating.",
         "input_schema": {
             "type": "object",
             "properties": {
@@ -1138,7 +1138,7 @@ ZOHO_BOOKS_TOOLS = [
     },
     {
         "name": "zoho_books_update_tax",
-        "description": "Update an existing tax entry. Pass any Zoho Books tax fields.",
+        "description": "Update a tax entry. Never guess tax_id or tax_percentage — use zoho_books_list_taxes to find the record and confirm the rate with the user. Show proposed changes and ask for confirmation before updating.",
         "input_schema": {
             "type": "object",
             "properties": {
@@ -1153,7 +1153,7 @@ ZOHO_BOOKS_TOOLS = [
     },
     {
         "name": "zoho_books_delete_tax",
-        "description": "Delete a tax entry by ID.",
+        "description": "Delete a tax entry. Never guess tax_id — use zoho_books_list_taxes to confirm the record first. Show details and ask for explicit confirmation before deleting.",
         "input_schema": {
             "type": "object",
             "properties": {"tax_id": {"type": "string"}, **_ORG_PROP},
@@ -1184,7 +1184,7 @@ ZOHO_BOOKS_TOOLS = [
     },
     {
         "name": "zoho_books_create_customer_payment",
-        "description": "Record a customer payment. Defaults: currency INR.",
+        "description": "Record a customer payment. Never guess customer_id, invoice_id, or payment_mode. Use zoho_books_list_contacts for customer_id. Ask for date, amount, and payment mode explicitly. Show a draft summary and ask for confirmation before recording.",
         "input_schema": {
             "type": "object",
             "properties": {
@@ -1202,7 +1202,7 @@ ZOHO_BOOKS_TOOLS = [
     },
     {
         "name": "zoho_books_update_customer_payment",
-        "description": "Update an existing customer payment. Pass any Zoho Books payment fields.",
+        "description": "Update a customer payment. Never guess payment_id or payment_mode — use zoho_books_get_customer_payment to confirm the record first. Show proposed changes and ask for confirmation before updating.",
         "input_schema": {
             "type": "object",
             "properties": {
@@ -1217,7 +1217,7 @@ ZOHO_BOOKS_TOOLS = [
     },
     {
         "name": "zoho_books_delete_customer_payment",
-        "description": "Delete a customer payment record by ID.",
+        "description": "Delete a customer payment. Never guess payment_id — use zoho_books_get_customer_payment to confirm the record first. Show details and ask for explicit confirmation before deleting.",
         "input_schema": {
             "type": "object",
             "properties": {"payment_id": {"type": "string"}, **_ORG_PROP},

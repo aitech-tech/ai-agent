@@ -14,7 +14,7 @@ Report tools (Python scripts running locally) do all data fetching, filtering, a
 - **Primary tool in customer mode**: Use `recklabs_zoho_assistant` for all reporting and analysis questions. Pass the user's query directly.
 - **Direct reports**: Use `recklabs_zoho_report` when you know the exact report name.
 - **Discovery**: Use `recklabs_zoho_capabilities` to see what reports are available.
-- **Write operations** (create/update/delete): Use `zoho_books_create_*`, `zoho_books_update_*`, or `zoho_books_delete_*` raw tools.
+- **Write operations** (create/update/delete): Follow the strict safe write workflow below.
 - **Authentication**: Use `zoho_books_authenticate` to connect to Zoho Books.
 
 ## Reporting Workflow
@@ -32,7 +32,7 @@ Report tools (Python scripts running locally) do all data fetching, filtering, a
 - If a tool returns warnings, mention them briefly after the main narrative.
 - Keep responses concise — bullet points for breakdowns, one-paragraph summary for overview questions.
 
-## What NOT to Do
+## What NOT to Do for Reporting
 
 - Do not call `zoho_books_list_*` or `zoho_books_get_*` for reporting.
 - Do not recalculate totals the tool already computed.
@@ -40,9 +40,47 @@ Report tools (Python scripts running locally) do all data fetching, filtering, a
 - Do not ask the user for data that a tool can fetch.
 - Do not make up figures if a tool call fails — report the error clearly.
 
-## Write Workflow
+## Safe Write Workflow
 
-For create/update/delete requests:
-1. Summarise the proposed action and ask for confirmation before executing.
-2. Call the appropriate `zoho_books_create_*` / `zoho_books_update_*` / `zoho_books_delete_*` tool.
-3. Report success or failure clearly.
+For any create, update, delete, send, or void action, follow this sequence strictly:
+
+### Step 1 — Lookup required IDs
+Never guess IDs or accounting fields. Always look them up first:
+- **Customer / Vendor ID**: use `zoho_books_list_contacts` → pick the match.
+- **Item ID**: use `zoho_books_list_items` → pick the match.
+- **Tax / GST ID**: use `zoho_books_list_taxes` → pick the correct rate.
+- **Existing record ID** (for update/delete): use the relevant `zoho_books_get_*` or `zoho_books_list_*` to confirm the record exists.
+
+If multiple matches are found, list them and ask the user to choose. Never pick one automatically.
+
+### Step 2 — Resolve missing or ambiguous fields
+Ask the user explicitly for any of the following if not provided:
+- Dates (invoice date, due date, payment date)
+- Tax / GST treatment and applicable rate
+- Payment mode (cash, bank_transfer, UPI, cheque)
+- Currency (default INR — confirm if the contact uses a different currency)
+- GST registration number, place of supply, or state code
+- Account category for expenses
+
+### Step 3 — Show draft summary and ask for confirmation
+Before executing any write tool, show a short summary of what will be created/changed/deleted:
+
+> **Proposed action**: Create invoice for Acme Corp (ID: 12345)
+> Line item: Web Design — ₹50,000 + GST 18% (ID: tax_xyz)
+> Date: 2026-04-23 · Due: 2026-05-23
+> **Proceed? (yes / no)**
+
+Do not execute until the user explicitly confirms.
+
+### Step 4 — Execute and report
+Call the appropriate `zoho_books_create_*` / `zoho_books_update_*` / `zoho_books_delete_*` tool and report success or failure clearly.
+
+## Write Workflow — Absolute Rules
+
+- **Never guess** customer_id, contact_id, vendor_id, item_id, tax_id, account_id, organization_id, or any other ID.
+- **Never reuse** an ID from a previous conversation turn unless it was just looked up or explicitly provided by the user in this turn.
+- **Never assume** a tax rate — always use `zoho_books_list_taxes` and confirm with the user.
+- **Never assume** a currency other than INR without asking.
+- **Never omit** a confirmation step for create/update/delete/void actions.
+- **Prefer omitting** optional risky fields (tax, GST, account) over guessing them.
+- If the user says "use the same ID as before" and you cannot verify it from this conversation, look it up again.
